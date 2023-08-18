@@ -1,0 +1,61 @@
+{
+  "name": "jdenticon",
+  "version": "2.2.0",
+  "description": "Javascript identicon generator",
+  "main": "src/node.js",
+  "browser": "dist/jdenticon.min.js",
+  "types": "types/index.d.ts",
+  "bin": {
+    "jdenticon": "bin/jdenticon.js"
+  },
+  "dependencies": {
+    "@types/node": "*",
+    "canvas-renderer": "~2.1.1"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.3.30",
+    "del": "^1.2.1",
+    "google-closure-compiler": "^20190618.0.0",
+    "gulp": "^4.0.2",
+    "gulp-rename": "^1.4.0",
+    "gulp-replace": "^1.0.0",
+    "gulp-replace-with-sourcemaps": "^0.7.1",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-wrap": "^0.15.0",
+    "gulp-zip": "^5.0.0",
+    "module-deps": "^4.1.1",
+    "strip-bom": "^3.0.0",
+    "tap": "^10.7.0",
+    "through2": "^2.0.3",
+    "typescript": "^3.5.3"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "release": "gulp release",
+    "test": "npm run test:unit && npm run test:types",
+    "test:unit": "tap test/node/*.js",
+    "test:types": "tsc -p ./types/test/tsconfig.json"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "src/",
+    "types/index.d.ts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dmester/jdenticon"
+  },
+  "bugs": {
+    "url": "https://github.com/dmester/jdenticon/issues"
+  },
+  "keywords": [
+    "javascript",
+    "identicon",
+    "jdenticon",
+    "avatar"
+  ],
+  "author": "Daniel Mester Pirttijärvi",
+  "license": "MIT",
+  "homepage": "https://github.com/dmester/jdenticon"
+}
