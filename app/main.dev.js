@@ -172,7 +172,7 @@ contextMenu({
       visible: params.selectionText.trim().length === 64,
       click: () => {
         shell.openExternal(
-          `https://network.traaittplatform.com/?hash=${encodeURIComponent(
+          `https://interface.traaitt.com/transaction.html?hash=${encodeURIComponent(
             params.selectionText
           )}#blockchain_transaction`
         );

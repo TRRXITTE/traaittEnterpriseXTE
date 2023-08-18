@@ -113,7 +113,7 @@ export default class NodeChanger extends Component<Props, State> {
   };
 
   findNode = () => {
-    remote.shell.openExternal('https://raw.githubusercontent.com/TRRXITTE/traaittPlatformnetworkserver/master/traaittplatform.json');
+    remote.shell.openExternal('https://interface.traaitt.com/nodes.html');
   };
 
   handleNodeInputChange = (event: any) => {

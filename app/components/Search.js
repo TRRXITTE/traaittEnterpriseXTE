@@ -133,7 +133,7 @@ export default class Search extends Component<Props, States> {
     const { query } = this.state;
 
     remote.shell.openExternal(
-      `https://network.traaittPlatform.com/?hash=${encodeURIComponent(query)}#blockchain_transaction`
+      `https://interface.traaitt.com/transaction.html?hash=${encodeURIComponent(query)}`
     );
   };
 
@@ -141,7 +141,7 @@ export default class Search extends Component<Props, States> {
     const hash = event.target.value;
 
     remote.shell.openExternal(
-      `https://network.traaittPlatform.com?hash=${encodeURIComponent(hash)}#blockchain_transaction`
+      `https://interface.traaitt.com/transaction.html?hash=${encodeURIComponent(hash)}`
     );
   };
 
