@@ -522,13 +522,13 @@ export default class Send extends Component<Props, State> {
     const { unlockedBalance, fiatPrice, displayCurrency } = this.state;
 
     const totalAmount =
-      unlockedBalance - 10 - parseInt(session.daemon.feeAmount, 10) <= 0
+      unlockedBalance - 100 - parseInt(session.daemon.feeAmount, 10) <= 0
         ? 0
         : unlockedBalance;
     const enteredAmount =
-      unlockedBalance - 10 - parseInt(session.daemon.feeAmount, 10) <= 0
+      unlockedBalance - 100 - parseInt(session.daemon.feeAmount, 10) <= 0
         ? 0
-        : totalAmount - 10 - parseInt(session.daemon.feeAmount, 10);
+        : totalAmount - 100 - parseInt(session.daemon.feeAmount, 10);
     this.setState({
       totalAmount:
         displayCurrency === 'XTE'
