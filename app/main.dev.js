@@ -82,7 +82,7 @@ if (fs.existsSync(`${programDirectory}/addressBook.json`)) {
   fs.writeFileSync(`${programDirectory}/addressBook.json`, '[]');
 }
 
-const daemonLogFile = path.resolve(directories[1], 'traaittplatformd.log');
+const daemonLogFile = path.resolve(directories[1], 'XTEnetwork.log');
 const backendLogFile = path.resolve(directories[1], 'wallet-backend.log');
 fs.closeSync(fs.openSync(daemonLogFile, 'w'));
 
@@ -213,7 +213,7 @@ app.on('ready', async () => {
   }
 
   mainWindow = new BrowserWindow({
-    title: `traaittPlatform Enterprise ${version}`,
+    title: `traaittEnterprise XTE ${version}`,
     useContentSize: true,
     show: false,
     width: 1200,

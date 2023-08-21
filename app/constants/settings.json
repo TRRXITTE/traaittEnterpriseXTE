@@ -14,13 +14,13 @@
   {
     "settingName": "Tail Local Daemon Log File",
     "location": "node",
-    "description": "Show the log output of your local traaittplatformd in the Terminal tab",
+    "description": "Show the log output of your local XTEnetwork in the Terminal tab",
     "keywords": ""
   },
   {
-    "settingName": "traaittplatformd Log File Location",
+    "settingName": "XTEnetwork Log File Location",
     "location": "node",
-    "description": "Set the path to the traaittplatformd log",
+    "description": "Set the path to the XTEnetwork log",
     "keywords": ""
   },
   {
@@ -134,7 +134,7 @@
   {
     "settingName": "About",
     "location": ".handleAbout",
-    "description": "View the readme for traaittPlatform Enterprise",
+    "description": "View the readme for traaittEnterprise XTE",
     "keywords": ""
   },
   {
@@ -146,13 +146,13 @@
   {
     "settingName": "Request Feature",
     "location": ".handleIssues",
-    "description": "Make a feature request for traaittPlatform Enterprise",
+    "description": "Make a feature request for traaittEnterprise XTE",
     "keywords": ""
   },
   {
     "settingName": "Donate",
     "location": ".goToDonate",
-    "description": "Like traaittPlatform Enterprise? Consider donating to support its development",
+    "description": "Like traaittEnterprise? Consider donating to support its development",
     "keywords": "donate developer"
   }
 ]

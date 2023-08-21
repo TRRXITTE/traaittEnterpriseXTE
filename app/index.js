@@ -194,7 +194,7 @@ eventEmitter.on('updateRequired', updateFile => {
       </center>
       <br />
       <p className={`subtitle ${textColor}`}>
-        There&apos;s a new version of Proton Wallet available. Would you like to
+        There&apos;s a new version of traaittEnterprise available. Would you like to
         download it?
       </p>
     </div>
@@ -466,7 +466,7 @@ function failedDaemonInit() {
       <p className={`subtitle ${textColor}`}>
         Your daemon failed to initialize, and you have been placed back in
         remote node mode automatically. You can check the log output of
-        traaittplatformd in the Terminal tab.
+        XTEnetwork in the Terminal tab.
       </p>
     </div>
   );

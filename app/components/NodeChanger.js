@@ -52,7 +52,7 @@ export default class NodeChanger extends Component<Props, State> {
     );
     this.handleNodeChangeComplete = this.handleNodeChangeComplete.bind(this);
     this.toggleLocalDaemon = this.toggleLocalDaemon.bind(this);
-    this.browseFortraaittplatformd = this.browseFortraaittplatformd.bind(this);
+    this.browseForXTEnetwork = this.browseForXTEnetwork.bind(this);
   }
 
   componentWillMount() {
@@ -67,7 +67,7 @@ export default class NodeChanger extends Component<Props, State> {
     eventEmitter.off('nodeChangeComplete', this.handleNodeChangeComplete);
   }
 
-  browseFortraaittplatformd = () => {
+  browseForXTEnetwork = () => {
     const options = {
       defaultPath: remote.app.getPath('documents')
     };
@@ -299,7 +299,7 @@ export default class NodeChanger extends Component<Props, State> {
           <div className="control">
             <button
               className="button is-warning"
-              onClick={this.browseFortraaittplatformd}
+              onClick={this.browseForXTEnetwork}
             >
               <span className="icon is-small">
                 <i className="fas fa-folder-open" />
