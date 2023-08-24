@@ -91,7 +91,7 @@ export default class Home extends Component<Props, State> {
     const hash = event.target.value;
 
     remote.shell.openExternal(
-      `https://interface.traaitt.com/transaction.html?hash=${encodeURIComponent(hash)}`
+      `https://explorer.traaitt.com/?hash=${encodeURIComponent(hash)}#blockchain_transaction`
     );
   };
 
