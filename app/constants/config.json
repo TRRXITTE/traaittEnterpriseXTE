@@ -7,7 +7,7 @@
   "logLevel": "DISABLED",
   "daemonHost": "asia-east.trrxitte.com",
   "daemonPort": 14485,
-  "darkMode": true,
+  "darkMode": false,
   "displayCurrency": "XTE",
   "selectedFiat": "usd",
   "fiatSymbol": "$",
