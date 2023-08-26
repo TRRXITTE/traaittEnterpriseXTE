@@ -1,4 +1,4 @@
-# traaittEnterpriseXTE
+# traaittEnterpriseXTE wallet
 
 ![image](https://github.com/TRRXITTE/traaitt/blob/master/docs/XTE.png)
 
@@ -20,8 +20,4 @@
 ```
   All of the code is released under the GPLv3 license. The icons in the ./resources and ./app/images folders, however, are not released under this license, rather they are maintained to be intellectual property of TRRXITTE Int., incorporate, and may not be used to represent the brand or identity of any other piece of software. See the included license file in ./resources/LICENSE and ./app/images/LICENSE for more details.
 ```
-##### Copyright 2020 - TODAY, TRRXITTE Int., incorporate
-
-#### License
-© [ExtraHash](https://github.com/ExtraHash)
-See included License file for more details.
+##### Copyright 2023, TRRXITTE Int., incorporate
