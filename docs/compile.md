@@ -1,21 +1,14 @@
-# traaittPlatform Enterprise
+# traaittEnterpriseXTE wallet
 
-![Download Count](https://img.shields.io/github/downloads/TRRXITTE/traaittPlatformEnterprise/total.svg)
-![License](https://img.shields.io/github/license/TRRXITTE/traaittPlatform)
-![Version](https://img.shields.io/github/v/release/TRRXITTE/traaittPlatform)
+![image](https://github.com/TRRXITTE/traaitt/blob/master/docs/XTE.png)
 
-### Master Build Status
+![Download Count](https://img.shields.io/github/downloads/trrxitte/traaittenterprisexte/total.svg)
+![Version](https://img.shields.io/github/v/release/trrxitte/traaittenterprisexte)
+![GitHub stars](https://img.shields.io/github/stars/TRRXITTE/traaittenterprisexte?label=Github%20Stars)
 
-![Master Build Status](https://github.com/turtlecoin/turtle-wallet-proton/workflows/Build%20Proton/badge.svg?branch=master)
 
-<p>
-  traaittPlatform Enterprise wallet that uses <a href="http://electron.atom.io/">Electron</a>, <a href="https://facebook.github.io/react/">React</a>, @trrxitte/xte-wallet-backend-JS, <a href="https://github.com/reactjs/redux">Redux</a>, <a href="https://github.com/reactjs/react-router">React Router</a>, <a href="http://webpack.github.io/docs/">Webpack</a> and <a href="https://github.com/gaearon/react-hot-loader">React Hot Loader</a>.
-</p>
-
-<p>
-  All of the code is released under the GPLv3 license. The icons in the ./resources and ./app/images folders, however, are not released under this license, rather they are maintained to be intellectual property of ExtraHash, and may not be used to represent the brand or identity of any other piece of software or group. See the included license file in ./resources/LICENSE and ./app/images/LICENSE for more details.
-</p>
-
+#### traaittEnterpriseXTE: [official GitHub Download](https://GitHub.com/trrxitte/traaittEnterpriseXTE/releases)
+<img src="https://raw.githubusercontent.com/trrxitte/traaittenterprisexte/master/screenshots/xte.png">
 
 ## Development Setup (All Platforms)
 
@@ -36,13 +29,13 @@ Tip: If you already have a different version of node.js installed besides 10.x, 
 First, clone the repo via git:
 
 ```bash
-git clone https://github.com/TRRXITTE/traaittPlatformEnterprise.git
+git clone https://github.com/TRRXITTE/traaittEnterpriseXTE.git
 ```
 
 And then install the dependencies with yarn.
 
 ```bash
-$ cd traaittPlatformEnterprise
+$ cd traaittEnterpriseXTE
 $ yarn
 ```
 
@@ -70,6 +63,5 @@ $ yarn package
 
 ## License
 
-© [TRRXITTE Int., incorporated](https://github.com/TRRXITTE)
-© [ExtraHash](https://github.com/ExtraHash)
+© [TRRXITTE Int., incorporate](https://github.com/TRRXITTE)
 See included License file for more details.
