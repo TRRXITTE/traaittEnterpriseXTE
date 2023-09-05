@@ -2,9 +2,9 @@
 
 ![image](https://github.com/TRRXITTE/traaitt/blob/master/docs/XTE.png)
 
-![Download Count](https://img.shields.io/github/downloads/trrxitte/traaittenterprisexte/total.svg)
-![Version](https://img.shields.io/github/v/release/trrxitte/traaittenterprisexte)
-![GitHub stars](https://img.shields.io/github/stars/TRRXITTE/traaittenterprisexte?label=Github%20Stars)
+![Download Count](https://img.shields.io/github/downloads/TRRXITTE/traaittEnterpriseXTE/total.svg)
+![Version](https://img.shields.io/github/v/release/TRRXITTE/traaittEnterpriseXTE)
+![GitHub stars](https://img.shields.io/github/stars/TRRXITTE/traaittEnterpriseXTE?label=Github%20Stars)
 
 
 #### traaittEnterpriseXTE: [official GitHub Download](https://GitHub.com/trrxitte/traaittEnterpriseXTE/releases)
