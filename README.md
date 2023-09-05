@@ -8,7 +8,7 @@
 
 
 #### traaittEnterpriseXTE: [official GitHub Download](https://GitHub.com/trrxitte/traaittEnterpriseXTE/releases)
-<img src="https://raw.githubusercontent.com/trrxitte/traaittenterprisexte/master/screenshots/xte.png">
+<img src="https://github.com/TRRXITTE/traaitt/blob/master/include/XTEenterprise.png">
 
 
 
