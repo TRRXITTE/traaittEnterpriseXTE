@@ -5,7 +5,7 @@
   "autoSelectDaemon": true,
   "minimizeToTray": false,
   "logLevel": "DISABLED",
-  "daemonHost": "asia-east.trrxitte.com",
+  "daemonHost": "main.trrxitte.com",
   "daemonPort": 14485,
   "darkMode": false,
   "displayCurrency": "XTE",
