@@ -71,7 +71,7 @@ jobs:
         env:
           SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
-          DMG=$(ls release/*x64*.dmg release/*x86_64*.dmg 2>/dev/null | head -1 || true)
+          DMG=$(ls release/*.dmg 2>/dev/null | head -1 || true)
           [[ -n "$DMG" ]] && codesign --force --options runtime --timestamp \
             --sign "$SIGNING_IDENTITY" "$DMG" && codesign --verify --verbose "$DMG"
 
@@ -83,7 +83,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          DMG=$(ls release/*x64*.dmg release/*x86_64*.dmg 2>/dev/null | head -1 || true)
+          DMG=$(ls release/*.dmg 2>/dev/null | head -1 || true)
           if [[ -n "$DMG" ]]; then
             xcrun notarytool submit "$DMG" \
               --apple-id "$APPLE_ID" \
@@ -96,9 +96,9 @@ jobs:
       - name: Generate checksum
         run: |
           shopt -s nullglob
-          files=(release/*x64*.dmg release/*x86_64*.dmg)
+          files=(release/*.dmg)
           if (( ${#files[@]} == 0 )); then
-            echo "No macOS x86_64 DMG found in release/"
+            echo "No macOS DMG found in release/"
             exit 1
           fi
           shasum -a 256 "${files[@]}" > release/SHA256SUMS.txt
@@ -295,7 +295,7 @@ jobs:
 
           | Artifact | Platform |
           |----------|----------|
-          | \`*-x64.dmg\` | macOS Intel |
+          | \`*.dmg\` | macOS Intel |
           | \`*Setup*.exe\` | Windows x86_64 |
           | \`*x86_64.AppImage\` | Linux x86_64 |
           | \`*arm64.AppImage\` | Linux ARM64 |
