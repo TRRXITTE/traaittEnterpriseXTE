@@ -779,3 +779,20 @@ html {
   overflow: auto;
   user-select: none;
 }
+
+.sync-progress-bar-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 6px 0 4px;
+  margin-bottom: 6px;
+}
+
+.sync-progress-label {
+  margin-bottom: 3px;
+}
+
+.sync-progress-bar {
+  margin-bottom: 0 !important;
+  transition: value 0.4s ease;
+}

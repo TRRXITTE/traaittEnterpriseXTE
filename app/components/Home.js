@@ -9,6 +9,7 @@ import { session, eventEmitter, il8n, loginCounter, config } from '../index';
 import NavBar from './NavBar';
 import BottomBar from './BottomBar';
 import Redirector from './Redirector';
+import SyncProgressBar from './SyncProgressBar';
 import uiType from '../utils/uitype';
 
 let displayedTransactionCount: number = 50;
@@ -212,6 +213,7 @@ export default class Home extends Component<Props, State> {
           <div
             className={`maincontent-homescreen ${backgroundColor} ${pageAnimationIn}`}
           >
+            <SyncProgressBar darkMode={darkMode} />
             <table
               className={`table is-striped is-hoverable is-fullwidth is-family-monospace ${tableMode}`}
             >
