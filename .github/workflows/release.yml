@@ -24,93 +24,6 @@ env:
   NODE_VERSION: '14.21.3'
 
 jobs:
-  # ── macOS Apple Silicon (arm64) ─────────────────────────────────────────────
-  build-macos-arm64:
-    name: macOS arm64 (Apple Silicon)
-    runs-on: macos-15-intel
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
-          cache-dependency-path: yarn.lock
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Build
-        run: yarn build
-
-      - name: Package macOS arm64
-        run: yarn package-mac-arm64
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Import signing certificate
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
-        continue-on-error: true
-        env:
-          MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
-          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
-        run: |
-          KC="$RUNNER_TEMP/build.keychain"
-          security create-keychain -p "" "$KC"
-          security set-keychain-settings -lut 21600 "$KC"
-          security unlock-keychain -p "" "$KC"
-          echo "$MACOS_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" -k "$KC" \
-            -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
-          security list-keychain -d user -s "$KC"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KC"
-
-      - name: Sign DMG
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
-        continue-on-error: true
-        env:
-          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-        run: |
-          DMG=$(ls release/*arm64*.dmg 2>/dev/null | head -1 || true)
-          [[ -n "$DMG" ]] && codesign --force --options runtime --timestamp \
-            --sign "$SIGNING_IDENTITY" "$DMG" && codesign --verify --verbose "$DMG"
-
-      - name: Notarize + Staple
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
-        continue-on-error: true
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-        run: |
-          DMG=$(ls release/*arm64*.dmg 2>/dev/null | head -1 || true)
-          if [[ -n "$DMG" ]]; then
-            xcrun notarytool submit "$DMG" \
-              --apple-id "$APPLE_ID" \
-              --team-id "$APPLE_TEAM_ID" \
-              --password "$APPLE_APP_PASSWORD" \
-              --wait
-            xcrun stapler staple "$DMG"
-          fi
-
-      - name: Generate checksum
-        run: |
-          shopt -s nullglob
-          files=(release/*arm64*.dmg)
-          if (( ${#files[@]} == 0 )); then
-            echo "No macOS arm64 DMG found in release/"
-            exit 1
-          fi
-          shasum -a 256 "${files[@]}" > release/SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-arm64
-          if-no-files-found: error
-          path: |
-            release/*.dmg
-            release/SHA256SUMS.txt
-
   # ── macOS Intel (x86_64) ────────────────────────────────────────────────────
   build-macos-x86_64:
     name: macOS x86_64 (Intel)
@@ -342,7 +255,6 @@ jobs:
   release:
     name: Publish Release
     needs:
-      - build-macos-arm64
       - build-macos-x86_64
       - build-windows
       - build-linux-x86_64
@@ -383,7 +295,6 @@ jobs:
 
           | Artifact | Platform |
           |----------|----------|
-          | \`*-arm64.dmg\` | macOS Apple Silicon |
           | \`*-x64.dmg\` | macOS Intel |
           | \`*Setup*.exe\` | Windows x86_64 |
           | \`*x86_64.AppImage\` | Linux x86_64 |
