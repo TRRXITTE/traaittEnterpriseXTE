@@ -61,11 +61,19 @@ jobs:
           security set-keychain-settings -lut 21600 "$KC"
           security unlock-keychain -p "$KC_PASS" "$KC"
 
-          printf '%s' "$MACOS_CERT_BASE64" | tr -d ' \t\n\r' | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          if [[ ! -s "$RUNNER_TEMP/cert.p12" ]]; then
-            echo "::error::cert.p12 is empty — check MACOS_CERT_BASE64 secret encoding"
+          CERT_B64_LEN="${#MACOS_CERT_BASE64}"
+          echo "::notice::MACOS_CERT_BASE64 encoded length: ${CERT_B64_LEN} chars"
+          if [[ "$CERT_B64_LEN" -eq 0 ]]; then
+            echo "::error::MACOS_CERT_BASE64 secret is empty"
             exit 1
           fi
+
+          printf '%s' "$MACOS_CERT_BASE64" | tr -d ' \t\n\r' | openssl base64 -d -out "$RUNNER_TEMP/cert.p12"
+          if [[ ! -s "$RUNNER_TEMP/cert.p12" ]]; then
+            echo "::error::cert.p12 is empty after decode — secret may be corrupt or double-encoded"
+            exit 1
+          fi
+          echo "::notice::cert.p12 decoded size: $(wc -c < "$RUNNER_TEMP/cert.p12") bytes"
 
           security import "$RUNNER_TEMP/cert.p12" -k "$KC" \
             -P "$MACOS_CERT_PASSWORD" \
