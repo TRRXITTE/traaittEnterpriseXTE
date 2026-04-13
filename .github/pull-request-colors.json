@@ -1,0 +1,99 @@
+{
+  "name": "github-pull-request-colors",
+  "description": "Supported color labels and color literals for pull request text and status notes.",
+  "githubMarkdown": {
+    "colorTextSupported": false,
+    "colorSwatchSupported": true,
+    "supportedLiteralFormats": [
+      "#RRGGBB",
+      "#RGB",
+      "rgb(r, g, b)",
+      "rgba(r, g, b, a)",
+      "hsl(h, s%, l%)",
+      "hsla(h, s%, l%, a)"
+    ]
+  },
+  "colors": [
+    {
+      "key": "primary",
+      "label": "Primary",
+      "hex": "#00d1b2",
+      "rgb": "rgb(0, 209, 178)",
+      "hsl": "hsl(171, 100%, 41%)",
+      "bulmaTextClass": "has-text-primary",
+      "usage": "default highlighted status"
+    },
+    {
+      "key": "link",
+      "label": "Link",
+      "hex": "#3273dc",
+      "rgb": "rgb(50, 115, 220)",
+      "hsl": "hsl(217, 71%, 53%)",
+      "bulmaTextClass": "has-text-link",
+      "usage": "external reference or documentation status"
+    },
+    {
+      "key": "info",
+      "label": "Info",
+      "hex": "#209cee",
+      "rgb": "rgb(32, 156, 238)",
+      "hsl": "hsl(204, 86%, 53%)",
+      "bulmaTextClass": "has-text-info",
+      "usage": "informational status"
+    },
+    {
+      "key": "success",
+      "label": "Success",
+      "hex": "#23d160",
+      "rgb": "rgb(35, 209, 96)",
+      "hsl": "hsl(141, 71%, 48%)",
+      "bulmaTextClass": "has-text-success",
+      "usage": "passed, completed, or ready"
+    },
+    {
+      "key": "warning",
+      "label": "Warning",
+      "hex": "#ffdd57",
+      "rgb": "rgb(255, 221, 87)",
+      "hsl": "hsl(48, 100%, 67%)",
+      "bulmaTextClass": "has-text-warning",
+      "usage": "needs attention before merge"
+    },
+    {
+      "key": "danger",
+      "label": "Danger",
+      "hex": "#ff3860",
+      "rgb": "rgb(255, 56, 96)",
+      "hsl": "hsl(348, 100%, 61%)",
+      "bulmaTextClass": "has-text-danger",
+      "usage": "failed, blocked, or high risk"
+    },
+    {
+      "key": "violet",
+      "label": "Violet",
+      "hex": "#b86bff",
+      "rgb": "rgb(184, 107, 255)",
+      "hsl": "hsl(271, 100%, 71%)",
+      "bulmaTextClass": "has-text-violet",
+      "usage": "terminal highlight or special note"
+    },
+    {
+      "key": "light",
+      "label": "Light",
+      "hex": "#f5f5f5",
+      "rgb": "rgb(245, 245, 245)",
+      "hsl": "hsl(0, 0%, 96%)",
+      "bulmaTextClass": "has-text-light",
+      "usage": "light mode foreground or contrast reference"
+    },
+    {
+      "key": "dark",
+      "label": "Dark",
+      "hex": "#363636",
+      "rgb": "rgb(54, 54, 54)",
+      "hsl": "hsl(0, 0%, 21%)",
+      "bulmaTextClass": "has-text-dark",
+      "usage": "dark mode foreground or contrast reference"
+    }
+  ]
+}

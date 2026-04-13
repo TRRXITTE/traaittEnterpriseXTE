@@ -671,6 +671,297 @@
   color: #f5f5f5;
 }
 
+body.rainbow-mode .wholescreen,
+body.rainbow-mode .fullwindow,
+body.rainbow-mode .maincontent,
+body.rainbow-mode .maincontent-homescreen {
+  background: linear-gradient(
+      95deg,
+      rgba(255, 82, 111, 0.12),
+      rgba(255, 224, 102, 0.11) 24%,
+      rgba(75, 214, 172, 0.12) 48%,
+      rgba(63, 169, 245, 0.11) 72%,
+      rgba(176, 94, 255, 0.12)
+    ),
+    linear-gradient(
+      135deg,
+      #0b0d0f 0%,
+      #28151d 18%,
+      #2b2511 36%,
+      #0e3029 54%,
+      #12263a 72%,
+      #241533 100%
+    ) !important;
+  background-size: 520% 520%, 360% 360% !important;
+  animation: rainbow-mode-pan 22s ease infinite;
+  color: #f5f7fb;
+}
+
+body.rainbow-mode .headerbar,
+body.rainbow-mode .headerbar-slidedown,
+body.rainbow-mode .footerbar,
+body.rainbow-mode .footerbar-slideup {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.98),
+    rgba(16, 16, 14, 0.96) 48%,
+    rgba(17, 29, 21, 0.98)
+  ) !important;
+  border-color: rgba(255, 224, 102, 0.24);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+body.rainbow-mode .headerbar,
+body.rainbow-mode .headerbar-slidedown {
+  border-bottom: 1px solid rgba(255, 224, 102, 0.24);
+}
+
+body.rainbow-mode .footerbar,
+body.rainbow-mode .footerbar-slideup {
+  border-top: 1px solid rgba(255, 224, 102, 0.24);
+}
+
+body.rainbow-mode .navbar {
+  background: transparent !important;
+}
+
+body.rainbow-mode .navbar-item,
+body.rainbow-mode .navbar-link {
+  color: #f5f7fb !important;
+  transition: background-color 0.18s ease, color 0.18s ease,
+    text-shadow 0.18s ease;
+}
+
+body.rainbow-mode .navbar-item:hover,
+body.rainbow-mode .navbar-link:hover,
+body.rainbow-mode .navbar-item:focus,
+body.rainbow-mode .navbar-link:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 14px rgba(255, 224, 102, 0.45);
+}
+
+body.rainbow-mode .navbar .input,
+body.rainbow-mode .textarea,
+body.rainbow-mode .select select {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(255, 224, 102, 0.32) !important;
+  box-shadow: 0 0 18px rgba(63, 169, 245, 0.16) !important;
+  color: #1d2024 !important;
+}
+
+body.rainbow-mode .sync-progress-bar-wrap {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 82, 111, 0.18),
+    rgba(255, 224, 102, 0.2),
+    rgba(75, 214, 172, 0.18),
+    rgba(63, 169, 245, 0.18)
+  );
+  border: 1px solid rgba(255, 224, 102, 0.26);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 8px 10px 7px;
+}
+
+body.rainbow-mode .sync-progress-label,
+body.rainbow-mode .sync-progress-label strong,
+body.rainbow-mode .has-text-dark,
+body.rainbow-mode .has-text-grey-dark {
+  color: #f5f7fb !important;
+}
+
+body.rainbow-mode .progress.sync-progress-bar {
+  background-color: rgba(0, 0, 0, 0.42) !important;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+body.rainbow-mode
+  .progress.sync-progress-bar::-webkit-progress-bar {
+  background-color: rgba(0, 0, 0, 0.42);
+}
+
+body.rainbow-mode
+  .progress.sync-progress-bar::-webkit-progress-value {
+  background: linear-gradient(
+    90deg,
+    #ff526f,
+    #ffe066,
+    #4bd6ac,
+    #3fa9f5,
+    #b05eff,
+    #ff526f
+  );
+  background-size: 260% 260%;
+  animation: rainbow-mode-flow 6s linear infinite;
+}
+
+body.rainbow-mode .table,
+body.rainbow-mode .table-darkmode {
+  background: rgba(17, 18, 20, 0.88) !important;
+  border: 1px solid rgba(255, 224, 102, 0.22);
+  border-collapse: separate;
+  border-radius: 8px;
+  border-spacing: 0;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+  color: #f2f4f7 !important;
+  overflow: hidden;
+}
+
+body.rainbow-mode .table thead th {
+  background: rgba(8, 9, 11, 0.88) !important;
+  border-bottom: 2px solid rgba(255, 224, 102, 0.68) !important;
+  color: #f7f8fa !important;
+}
+
+body.rainbow-mode .table td,
+body.rainbow-mode .table th {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #f2f4f7 !important;
+}
+
+body.rainbow-mode .table.is-striped tbody tr:not(.is-selected):nth-child(even) {
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+body.rainbow-mode .table.is-hoverable tbody tr:not(.is-selected):hover,
+body.rainbow-mode
+  .table.is-hoverable.is-striped
+  tbody
+  tr:not(.is-selected):hover {
+  background: rgba(255, 224, 102, 0.13) !important;
+  box-shadow: inset 3px 0 0 #4bd6ac;
+}
+
+body.rainbow-mode .box,
+body.rainbow-mode .dropdown-content {
+  background: rgba(17, 18, 20, 0.92) !important;
+  border: 1px solid rgba(255, 224, 102, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
+}
+
+body.rainbow-mode .menu-list a {
+  border-radius: 8px;
+  color: #f5f7fb !important;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.rainbow-mode .menu-list a:hover,
+body.rainbow-mode .menu-link-dark:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 3px 0 0 #ffe066;
+}
+
+body.rainbow-mode .has-background-black-ter,
+body.rainbow-mode .has-background-light {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 82, 111, 0.22),
+    rgba(75, 214, 172, 0.22)
+  ) !important;
+}
+
+body.rainbow-mode .button:not(.is-danger):not(.is-warning):not(.is-success),
+body.rainbow-mode .button.is-dark,
+body.rainbow-mode .button.is-black,
+body.rainbow-mode .button.is-light {
+  background: linear-gradient(
+    135deg,
+    rgba(21, 23, 26, 0.96),
+    rgba(43, 29, 56, 0.94)
+  ) !important;
+  border: 1px solid rgba(255, 224, 102, 0.28) !important;
+  border-radius: 8px;
+  color: #f5f7fb !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+body.rainbow-mode .button:hover {
+  box-shadow: 0 0 22px rgba(255, 224, 102, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.26);
+  transform: translateY(-1px);
+}
+
+body.rainbow-mode .tags .tag {
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+body.rainbow-mode .tags .tag:first-child {
+  background: rgba(17, 18, 20, 0.94) !important;
+  border: 1px solid rgba(255, 224, 102, 0.22);
+  color: #f5f7fb !important;
+}
+
+body.rainbow-mode .tag.is-info,
+body.rainbow-mode .tag.is-warning {
+  background: linear-gradient(90deg, #ffe066, #4bd6ac) !important;
+  color: #1c2024 !important;
+}
+
+body.rainbow-mode .tag.is-success {
+  background: linear-gradient(90deg, #4bd6ac, #7bdd7b) !important;
+  color: #122018 !important;
+}
+
+body.rainbow-mode .tag.is-danger {
+  background: linear-gradient(90deg, #ff526f, #ff9f4a) !important;
+  color: #ffffff !important;
+}
+
+.rainbow-mode-button {
+  background: linear-gradient(
+    120deg,
+    #e84855,
+    #f9dc5c,
+    #4bd6ac,
+    #2ab7ca,
+    #7d5fff,
+    #e84855
+  ) !important;
+  background-size: 260% 260% !important;
+  border-color: transparent !important;
+  border-radius: 8px;
+  animation: rainbow-mode-flow 5s linear infinite;
+  box-shadow: 0 0 20px rgba(249, 220, 92, 0.34);
+}
+
+.rainbow-mode-button-off {
+  opacity: 0.86;
+}
+
+body.rainbow-mode ::-webkit-scrollbar-thumb {
+  background: linear-gradient(#ff526f, #ffe066, #4bd6ac, #3fa9f5);
+  outline: 1px solid rgba(255, 224, 102, 0.26);
+}
+
+@keyframes rainbow-mode-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes rainbow-mode-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
 .statusicons {
   left: -18px;
 }
@@ -789,10 +1080,29 @@ html {
 }
 
 .sync-progress-label {
+  display: flex;
+  flex-wrap: wrap;
   margin-bottom: 3px;
+}
+
+.sync-progress-label span {
+  margin-right: 10px;
+}
+
+.sync-progress-label span:last-child {
+  margin-right: 0;
 }
 
 .sync-progress-bar {
   margin-bottom: 0 !important;
   transition: value 0.4s ease;
+}
+
+.node-select-field {
+  margin-bottom: 0.5rem;
+}
+
+.node-select-field .select,
+.node-select-field select {
+  width: 100%;
 }

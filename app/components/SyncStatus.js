@@ -12,7 +12,11 @@ type Props = {
 };
 
 type State = {
-  syncStatus: number
+  syncStatus: number,
+  daemonSyncStatus: number,
+  walletHeight: number,
+  daemonHeight: number,
+  networkHeight: number
 };
 
 export default class SyncStatus extends Component<Props, State> {
@@ -24,8 +28,13 @@ export default class SyncStatus extends Component<Props, State> {
 
   constructor(props?: Props) {
     super(props);
+    const [walletHeight, daemonHeight, networkHeight] = this.getSyncHeights();
     this.state = {
-      syncStatus: session.getSyncStatus()
+      syncStatus: session.getSyncStatus(),
+      daemonSyncStatus: session.getDaemonSyncStatus(),
+      walletHeight,
+      daemonHeight,
+      networkHeight
     };
     this.syncInterval = setInterval(() => this.refresh(), 1000);
   }
@@ -36,77 +45,133 @@ export default class SyncStatus extends Component<Props, State> {
     clearInterval(this.syncInterval);
   }
 
+  getSyncHeights() {
+    if (!session.wallet) {
+      return [0, 0, 0];
+    }
+    return session.wallet.getSyncStatus();
+  }
+
   refresh() {
+    const [walletHeight, daemonHeight, networkHeight] = this.getSyncHeights();
     this.setState(() => ({
-      syncStatus: session.getSyncStatus()
+      syncStatus: session.getSyncStatus(),
+      daemonSyncStatus: session.getDaemonSyncStatus(),
+      walletHeight,
+      daemonHeight,
+      networkHeight
     }));
     ReactTooltip.rebuild();
   }
 
+  renderStatusTag(
+    status: number,
+    isConnected: boolean,
+    tooltip: string,
+    size: string
+  ) {
+    if (!isConnected) {
+      return (
+        <span
+          className={`tag is-danger ${size} sync-status`}
+          data-tip={tooltip}
+        >
+          <ReactLoading
+            type="spinningBubbles"
+            color="#F5F5F5"
+            height={25}
+            width={25}
+          />
+        </span>
+      );
+    }
+
+    if (status >= 100) {
+      return (
+        <span
+          className={`tag is-success ${size} sync-status`}
+          data-tip={tooltip}
+        >
+          {status}%
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className={`tag is-warning ${size} sync-status`}
+        data-tip={tooltip}
+      >
+        {status}%
+        <ReactLoading type="bubbles" color="#fff0f5" height={30} width={30} />
+      </span>
+    );
+  }
+
   render() {
-    const { syncStatus } = this.state;
+    const {
+      syncStatus,
+      daemonSyncStatus,
+      walletHeight,
+      daemonHeight,
+      networkHeight
+    } = this.state;
     const { darkMode, size } = this.props;
     const color = darkMode ? 'is-dark' : 'is-white';
 
     let syncTooltip;
+    let daemonTooltip;
 
     if (session.wallet) {
       syncTooltip =
-        session.wallet.getSyncStatus()[2] === 0
+        networkHeight === 0
           ? 'Connecting, please wait...'
-          : `${session.wallet.getSyncStatus()[0]}/${
-              session.wallet.getSyncStatus()[2]
-            }`;
+          : `${walletHeight}/${networkHeight}`;
+      daemonTooltip =
+        networkHeight === 0
+          ? 'Connecting, please wait...'
+          : `${daemonHeight}/${networkHeight}`;
     } else {
       syncTooltip = 'No wallet open!';
+      daemonTooltip = 'No wallet open!';
     }
     return (
-      <div className="control statusicons">
-        <div className="tags has-addons">
-          <span
-            className={
-              darkMode ? `tag ${color} ${size}` : `tag ${color} ${size}`
-            }
-          >
-            Sync:
-          </span>
-          {syncStatus < 100 && session.daemon.networkBlockCount !== 0 && (
+      <React.Fragment>
+        <div className="control statusicons">
+          <div className="tags has-addons">
             <span
-              className={`tag is-warning ${size} sync-status`}
-              data-tip={syncTooltip}
+              className={
+                darkMode ? `tag ${color} ${size}` : `tag ${color} ${size}`
+              }
             >
-              {syncStatus}%
-              <ReactLoading
-                type="bubbles"
-                color="#fff0f5"
-                height={30}
-                width={30}
-              />
+              Node:
             </span>
-          )}
-          {syncStatus === 100 && session.daemon.networkBlockCount !== 0 && (
-            <span
-              className={`tag is-success ${size} sync-status`}
-              data-tip={syncTooltip}
-            >
-              {syncStatus}%
-            </span>
-          )}
-          {session.daemon.networkBlockCount === 0 && (
-            <span
-              className={`tag is-danger ${size} sync-status`}
-              data-tip={syncTooltip}
-            >
-              <ReactLoading
-                type="spinningBubbles"
-                color="#F5F5F5"
-                height={25}
-                width={25}
-              />
-            </span>
-          )}
+            {this.renderStatusTag(
+              daemonSyncStatus,
+              networkHeight !== 0,
+              daemonTooltip,
+              size
+            )}
+          </div>
         </div>
-      </div>
+        <div className="control statusicons">
+          <div className="tags has-addons">
+            <span
+              className={
+                darkMode ? `tag ${color} ${size}` : `tag ${color} ${size}`
+              }
+            >
+              Sync:
+            </span>
+            {this.renderStatusTag(
+              syncStatus,
+              networkHeight !== 0,
+              syncTooltip,
+              size
+            )}
+          </div>
+        </div>
+      </React.Fragment>
     );
   }
 }

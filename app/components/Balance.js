@@ -88,6 +88,7 @@ export default class Balance extends Component<Props, State> {
       });
       session.modifyConfig('displayCurrency', 'fiat');
       eventEmitter.emit('modifyCurrency', 'fiat');
+      session.getFiatPrice(config.selectedFiat);
     }
     if (displayCurrency === 'fiat') {
       this.setState({

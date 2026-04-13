@@ -271,7 +271,6 @@ export default class Receive extends Component<Props, State> {
                         <QRCode
                           value={sessionAddress}
                           renderAs="svg"
-                          bgColor="#f5f5f5"
                           size={200}
                         />
                       </span>

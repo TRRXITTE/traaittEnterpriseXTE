@@ -42,7 +42,7 @@ class Redirector extends Component<Props, State> {
 
   activityTimer: TimeoutID;
 
-  refreshPrice: IntervalID;
+  refreshPrice: any;
 
   constructor(props?: Props) {
     super(props);
@@ -73,6 +73,10 @@ class Redirector extends Component<Props, State> {
     this.setAutoLock = this.setAutoLock.bind(this);
     this.goToNewWallet = this.goToNewWallet.bind(this);
     this.goToDonate = this.goToDonate.bind(this);
+    this.handleDisplayCurrencyChange = this.handleDisplayCurrencyChange.bind(
+      this
+    );
+    this.refreshPrice = null;
 
     if (
       session.walletPassword !== '' &&
@@ -85,6 +89,7 @@ class Redirector extends Component<Props, State> {
       );
     }
     if (config.displayCurrency === 'fiat') {
+      this.getPrice();
       this.refreshPrice = setInterval(this.getPrice, 1000 * 30);
     }
   }
@@ -109,6 +114,7 @@ class Redirector extends Component<Props, State> {
     eventEmitter.on('goToSettings', this.goToSettings);
     eventEmitter.on('goToNewWallet', this.goToNewWallet);
     eventEmitter.on('goToDonate', this.goToDonate);
+    eventEmitter.on('modifyCurrency', this.handleDisplayCurrencyChange);
 
     // prettier-ignore
     const { location: { pathname } } = this.props;
@@ -141,8 +147,11 @@ class Redirector extends Component<Props, State> {
     eventEmitter.off('goToSettings', this.goToSettings);
     eventEmitter.off('goToNewWallet', this.goToNewWallet);
     eventEmitter.off('goToDonate', this.goToDonate);
+    eventEmitter.off('modifyCurrency', this.handleDisplayCurrencyChange);
     clearTimeout(this.activityTimer);
-    clearInterval(this.refreshPrice);
+    if (this.refreshPrice) {
+      clearInterval(this.refreshPrice);
+    }
   }
 
   goToDonate = () => {
@@ -159,6 +168,21 @@ class Redirector extends Component<Props, State> {
 
   getPrice = () => {
     session.getFiatPrice(config.selectedFiat);
+  };
+
+  handleDisplayCurrencyChange = (displayCurrency: string) => {
+    if (displayCurrency === 'fiat') {
+      this.getPrice();
+      if (!this.refreshPrice) {
+        this.refreshPrice = setInterval(this.getPrice, 1000 * 30);
+      }
+      return;
+    }
+
+    if (this.refreshPrice) {
+      clearInterval(this.refreshPrice);
+      this.refreshPrice = null;
+    }
   };
 
   setAutoLock = async (enable: boolean) => {

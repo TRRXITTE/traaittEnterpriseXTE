@@ -29,6 +29,8 @@ export default class WalletSession {
 
   darkMode: boolean;
 
+  rainbowMode: boolean;
+
   firstLoadOnLogin: boolean;
 
   wbConfig: Config;
@@ -62,7 +64,8 @@ export default class WalletSession {
     this.daemonPort =
       parseInt(daemonPort, 10) || parseInt(config.daemonPort, 10);
     this.walletFile = config.walletFile;
-    this.darkMode = config.darkMode || false;
+    this.darkMode = config.darkMode === true;
+    this.rainbowMode = config.rainbowMode === true && this.darkMode === true;
     this.firstLoadOnLogin = true;
     this.wbConfig = {
       scanCoinbaseTransactions: config.scanCoinbaseTransactions !== false,
@@ -86,8 +89,7 @@ export default class WalletSession {
 
     this.getFiatPrice(this.selectedFiat);
 
-    const useSSL = config.daemonSSL || this.daemonPort === 443;
-    this.daemon = new Daemon(this.daemonHost, this.daemonPort, useSSL);
+    this.daemon = new Daemon(this.daemonHost, this.daemonPort);
 
     if (this.walletFile === '') {
       this.firstStartup = true;
@@ -202,8 +204,39 @@ export default class WalletSession {
     const programDirectory = directories[0];
     const modifyConfig = config;
     modifyConfig.darkMode = status;
+    if (status === false) {
+      modifyConfig.rainbowMode = false;
+      config.rainbowMode = false;
+      this.rainbowMode = false;
+    }
     log.debug(`Dark mode changed to ${status.toString()}`);
     config.darkMode = status;
+    this.darkMode = status;
+    fs.writeFileSync(
+      `${programDirectory}/config.json`,
+      JSON.stringify(config, null, 4),
+      err => {
+        if (err) throw err;
+        log.debug(err);
+        return false;
+      }
+    );
+    log.debug('Wrote config file to disk.');
+  }
+
+  toggleRainbowMode(status: boolean) {
+    const programDirectory = directories[0];
+    const modifyConfig = config;
+    if (status === true) {
+      modifyConfig.darkMode = true;
+      config.darkMode = true;
+      this.darkMode = true;
+    }
+    const rainbowMode = status === true && config.darkMode === true;
+    modifyConfig.rainbowMode = rainbowMode;
+    log.debug(`Rainbow mode changed to ${rainbowMode.toString()}`);
+    config.rainbowMode = rainbowMode;
+    this.rainbowMode = rainbowMode;
     fs.writeFileSync(
       `${programDirectory}/config.json`,
       JSON.stringify(config, null, 4),
@@ -368,11 +401,9 @@ export default class WalletSession {
         }
       );
       log.debug('Wrote config file to disk. Swapping daemon...');
-      const swapSSL = modifyConfig.daemonSSL || modifyConfig.daemonPort === 443;
       this.daemon = new Daemon(
         modifyConfig.daemonHost,
-        modifyConfig.daemonPort,
-        swapSSL
+        modifyConfig.daemonPort
       );
       await this.wallet.swapNode(this.daemon);
       eventEmitter.emit('nodeChangeComplete');
@@ -441,49 +472,93 @@ export default class WalletSession {
   }
 
   getFiatPrice = async (fiat: string) => {
-    const baseParams = `vs_currency=${fiat}&order=market_cap_desc&per_page=1&page=1&sparkline=false&price_change_percentage=7d`;
-    const xteURL = `https://api.coingecko.com/api/v3/coins/markets?${baseParams}&ids=traaitt`;
-    const dogeURL = `https://api.coingecko.com/api/v3/coins/markets?${baseParams}&ids=dogecoin`;
+    const normalizedFiat = (fiat || config.selectedFiat || 'usd').toLowerCase();
+    const dogeSimpleURL = `https://api.coingecko.com/api/v3/simple/price?ids=dogecoin&vs_currencies=${encodeURIComponent(
+      normalizedFiat
+    )}`;
+    const dogeMarketParams = [
+      `vs_currency=${encodeURIComponent(normalizedFiat)}`,
+      'ids=dogecoin',
+      'order=market_cap_desc',
+      'per_page=1',
+      'page=1',
+      'sparkline=false',
+      'price_change_percentage=7d'
+    ].join('&');
+    const dogeMarketURL = `https://api.coingecko.com/api/v3/coins/markets?${dogeMarketParams}`;
 
     const requestOptions = {
       method: 'GET',
-      headers: {},
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': `${name}/${version}`
+      },
       json: true,
-      gzip: true
+      gzip: true,
+      timeout: 1000 * 20
     };
 
-    // Try XTE price first; fall back to DOGE as a sample if XTE is not listed
+    const setFiatPrice = (price: any, source: string) => {
+      const parsedPrice = Number(price);
+      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+        return false;
+      }
+      this.fiatPrice = parsedPrice;
+      log.debug(
+        `Using ${source} price for ${normalizedFiat.toUpperCase()}: ${
+          this.fiatPrice
+        }`
+      );
+      eventEmitter.emit('gotFiatPrice', this.fiatPrice);
+      return true;
+    };
+
     try {
-      const xteResult = await request({ ...requestOptions, uri: xteURL });
-      if (xteResult && xteResult.length > 0 && xteResult[0].current_price != null) {
-        this.fiatPrice = xteResult[0].current_price;
-        eventEmitter.emit('gotFiatPrice', this.fiatPrice);
+      const dogeSimpleResult = await request({
+        ...requestOptions,
+        uri: dogeSimpleURL
+      });
+      if (
+        dogeSimpleResult &&
+        dogeSimpleResult.dogecoin &&
+        setFiatPrice(
+          dogeSimpleResult.dogecoin[normalizedFiat],
+          'DOGE CoinGecko simple'
+        )
+      ) {
         return this.fiatPrice;
       }
     } catch (err) {
-      log.debug(`XTE CoinGecko request failed, trying DOGE fallback: \n`, err);
+      log.debug(`DOGE CoinGecko simple price request failed: \n`, err);
     }
 
     try {
-      const dogeResult = await request({ ...requestOptions, uri: dogeURL });
-      if (dogeResult && dogeResult.length > 0 && dogeResult[0].current_price != null) {
-        this.fiatPrice = dogeResult[0].current_price;
-        log.debug(`Using DOGE sample price: ${this.fiatPrice}`);
-        eventEmitter.emit('gotFiatPrice', this.fiatPrice);
+      const dogeMarketResult = await request({
+        ...requestOptions,
+        uri: dogeMarketURL
+      });
+      if (
+        dogeMarketResult &&
+        dogeMarketResult.length > 0 &&
+        setFiatPrice(
+          dogeMarketResult[0].current_price,
+          'DOGE CoinGecko market'
+        )
+      ) {
         return this.fiatPrice;
       }
     } catch (err) {
-      log.debug(`DOGE CoinGecko fallback request failed: \n`, err);
+      log.debug(`DOGE CoinGecko market price request failed: \n`, err);
     }
 
-    return undefined;
+    return this.fiatPrice || undefined;
   };
 
   getDaemonSyncStatus() {
     if (this.loginFailed || this.firstStartup) {
       return 0;
     }
-    const [walletHeight, daemonHeight] = this.wallet.getSyncStatus();
+    const [, daemonHeight] = this.wallet.getSyncStatus();
     let [, , networkHeight] = this.wallet.getSyncStatus();
     /* Since we update the daemonHeight in intervals, and we update wallet
         height by syncing, occasionally wallet height is > network height.
@@ -495,15 +570,21 @@ export default class WalletSession {
     ) {
       networkHeight = daemonHeight;
     }
+    if (networkHeight === 0 && daemonHeight !== 0) {
+      networkHeight = daemonHeight;
+    }
     // Don't divide by zero
     const syncFill = networkHeight === 0 ? 0 : daemonHeight / networkHeight;
     let percentSync = 100 * syncFill;
+    if (percentSync > 100) {
+      percentSync = 100.0;
+    }
     // Prevent 100% when just under
     if (percentSync > 99.99 && percentSync < 100) {
       percentSync = 99.99;
     }
 
-    if (networkHeight - walletHeight === 1) {
+    if (networkHeight - daemonHeight === 1) {
       percentSync = 100.0;
     }
 
@@ -534,6 +615,9 @@ export default class WalletSession {
     // Don't divide by zero
     const syncFill = networkHeight === 0 ? 0 : walletHeight / networkHeight;
     let percentSync = 100 * syncFill;
+    if (percentSync > 100) {
+      percentSync = 100.0;
+    }
     // Prevent 100% when just under
     if (percentSync > 99.99 && percentSync < 100) {
       percentSync = 99.99;

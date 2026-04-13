@@ -716,7 +716,7 @@ export default class Send extends Component<Props, State> {
                           placeholder={`How much to send (eg. ${
                             displayCurrency === 'fiat'
                               ? exampleAmount
-                              : '1000000 XTE'
+                              : '5000 XTE'
                           })`}
                           value={enteredAmount}
                           onChange={this.handleAmountChange}

@@ -28,6 +28,8 @@ jobs:
   build-macos-x86_64:
     name: macOS x86_64 (Intel)
     runs-on: macos-15-intel
+    env:
+      MACOS_SIGNING_ENABLED: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,11 +44,17 @@ jobs:
 
       # Import cert BEFORE packaging so electron-builder can sign the .app bundle
       - name: Import signing certificate
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        if: env.MACOS_SIGNING_ENABLED == 'true'
         env:
           MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
           MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
+          if [[ -z "$MACOS_CERT_BASE64" || -z "$MACOS_CERT_PASSWORD" ]]; then
+            echo "::error::MACOS_CERT_BASE64 and MACOS_CERT_PASSWORD are required for signed macOS releases."
+            exit 1
+          fi
+
           KC="$RUNNER_TEMP/build.keychain"
           security create-keychain -p "" "$KC"
           security set-keychain-settings -lut 21600 "$KC"
@@ -54,38 +62,55 @@ jobs:
           echo "$MACOS_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
           security import "$RUNNER_TEMP/cert.p12" -k "$KC" \
             -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
-          security list-keychain -d user -s "$KC"
+          security list-keychains -d user -s "$KC"
+          security default-keychain -s "$KC"
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KC"
           # Export CSC_LINK/CSC_KEY_PASSWORD for electron-builder
           echo "CSC_LINK=$RUNNER_TEMP/cert.p12" >> $GITHUB_ENV
           echo "CSC_KEY_PASSWORD=$MACOS_CERT_PASSWORD" >> $GITHUB_ENV
+          echo "CSC_IDENTITY_AUTO_DISCOVERY=true" >> $GITHUB_ENV
+          if [[ -n "$APPLE_SIGNING_IDENTITY" ]]; then
+            echo "CSC_NAME=$APPLE_SIGNING_IDENTITY" >> $GITHUB_ENV
+          fi
+
+      - name: Disable macOS signing
+        if: env.MACOS_SIGNING_ENABLED != 'true'
+        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> $GITHUB_ENV
 
       - name: Build
         run: yarn build
 
       - name: Package macOS x86_64
         run: yarn package-mac-x86_64
-        env:
-          # CSC_LINK and CSC_KEY_PASSWORD are set by the import step for signed builds;
-          # for unsigned builds they are empty and electron-builder skips signing.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Notarize + Staple
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        if: env.MACOS_SIGNING_ENABLED == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          DMG=$(ls release/*.dmg 2>/dev/null | head -1 || true)
-          if [[ -n "$DMG" ]]; then
+          if [[ -z "$APPLE_ID" || -z "$APPLE_TEAM_ID" || -z "$APPLE_APP_PASSWORD" ]]; then
+            echo "::error::APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_PASSWORD are required for notarization."
+            exit 1
+          fi
+
+          shopt -s nullglob
+          dmgs=(release/*.dmg)
+          if (( ${#dmgs[@]} == 0 )); then
+            echo "::error::No macOS DMG found in release/ for notarization."
+            exit 1
+          fi
+
+          for DMG in "${dmgs[@]}"; do
             xcrun notarytool submit "$DMG" \
               --apple-id "$APPLE_ID" \
               --team-id "$APPLE_TEAM_ID" \
               --password "$APPLE_APP_PASSWORD" \
               --wait
             xcrun stapler staple "$DMG"
-          fi
+            xcrun stapler validate "$DMG"
+          done
 
       - name: Generate checksum
         run: |

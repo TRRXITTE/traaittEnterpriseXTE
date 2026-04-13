@@ -19,6 +19,7 @@ import DarkModeToggle from './DarkModeToggle';
 import CloseToTrayToggle from './CloseToTrayToggle';
 import ScanCoinbaseToggle from './ScanCoinbaseToggle';
 import NotificationsToggle from './NotificationsToggle';
+import RainbowModeToggle from './RainbowModeToggle';
 
 type Props = {};
 
@@ -317,6 +318,8 @@ export default class Settings extends Component<Props, State> {
                     <FiatSelector darkMode={darkMode} />
                     <br />
                     <DarkModeToggle darkMode={darkMode} />
+                    <br />
+                    <RainbowModeToggle darkMode={darkMode} />
                   </div>
                 )}
 
@@ -377,6 +380,8 @@ export default class Settings extends Component<Props, State> {
                       <FiatSelector darkMode={darkMode} />
                       <br />
                       <DarkModeToggle darkMode={darkMode} />
+                      <br />
+                      <RainbowModeToggle darkMode={darkMode} />
                     </div>
                   )}
                   {previousTab === 'security' && masterSwitch && (

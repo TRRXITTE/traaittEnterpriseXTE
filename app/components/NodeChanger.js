@@ -2,18 +2,24 @@
 //
 // Please see the included LICENSE file for more information.
 import React, { Component } from 'react';
-import { remote } from 'electron';
 import log from 'electron-log';
 import { Daemon } from '@trrxitte/xte-wallet-backend';
-import {
-  il8n,
-  session,
-  eventEmitter,
-  config,
-  stopTail,
-  startTail
-} from '../index';
+import { il8n, session, eventEmitter, config } from '../index';
 import uiType from '../utils/uitype';
+
+const DEFAULT_NODE_PORT = '14485';
+
+const REMOTE_NODES = [
+  'main.trrxitte.com:14485',
+  'eu-west.trrxitte.com:14485',
+  'eu-west-2.trrxitte.com:14485',
+  'us-east.trrxitte.com:14485',
+  'us-west.trrxitte.com:14485',
+  'sa-east.trrxitte.com:14485',
+  'asia-sea.trrxitte.com:14485',
+  'asia-east.trrxitte.com:14485',
+  'asie-nea.trrxitte.com:14485'
+];
 
 type Props = {
   darkMode: boolean
@@ -22,9 +28,7 @@ type Props = {
 type State = {
   connectednode: string,
   nodeChangeInProgress: boolean,
-  ssl: boolean,
-  useLocalDaemon: boolean,
-  daemonLogPath: string
+  ssl: boolean | void
 };
 
 export default class NodeChanger extends Component<Props, State> {
@@ -35,24 +39,30 @@ export default class NodeChanger extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.daemonInfo =
-      session && session.wallet ? session.wallet.getDaemonConnectionInfo() : '';
+      session && session.wallet
+        ? session.wallet.getDaemonConnectionInfo()
+        : {
+            host: config.daemonHost,
+            port: config.daemonPort,
+            ssl: config.daemonSSL
+          };
 
     this.state = {
       connectednode: `${this.daemonInfo.host}:${this.daemonInfo.port}`,
       nodeChangeInProgress: false,
-      ssl: this.daemonInfo.ssl,
-      useLocalDaemon: config.useLocalDaemon,
-      daemonLogPath: config.daemonLogPath
+      ssl:
+        this.daemonInfo.sslDetermined === false
+          ? undefined
+          : this.daemonInfo.ssl
     };
     this.changeNode = this.changeNode.bind(this);
     this.handleNodeInputChange = this.handleNodeInputChange.bind(this);
+    this.handleNodeSelectChange = this.handleNodeSelectChange.bind(this);
     this.handleNewNode = this.handleNewNode.bind(this);
     this.handleNodeChangeInProgress = this.handleNodeChangeInProgress.bind(
       this
     );
     this.handleNodeChangeComplete = this.handleNodeChangeComplete.bind(this);
-    this.toggleLocalDaemon = this.toggleLocalDaemon.bind(this);
-    this.browseForXTEnetwork = this.browseForXTEnetwork.bind(this);
   }
 
   componentWillMount() {
@@ -67,58 +77,73 @@ export default class NodeChanger extends Component<Props, State> {
     eventEmitter.off('nodeChangeComplete', this.handleNodeChangeComplete);
   }
 
-  browseForXTEnetwork = () => {
-    const options = {
-      defaultPath: remote.app.getPath('documents')
-    };
-    const getPaths = remote.dialog.showOpenDialog(null, options);
-    if (getPaths === undefined) {
-      return;
-    }
-    this.setState({
-      daemonLogPath: getPaths[0]
-    });
-
-    session.modifyConfig('daemonLogPath', getPaths[0]);
-  };
-
   changeNode = async (event: any) => {
     event.preventDefault();
-    this.setState({
-      connectednode: event.target[0].value
-    });
-    const connectionString = event.target[0].value;
+    const { connectednode } = this.state;
+    const connectionString = connectednode.trim();
     // eslint-disable-next-line prefer-const
     let [host, port] = connectionString.split(':', 2);
-    if (port === undefined) {
-      port = '11898';
+    if (!host) {
+      return;
     }
+    host = host.trim();
+    if (port === undefined) {
+      port = DEFAULT_NODE_PORT;
+    }
+    port = port.trim() || DEFAULT_NODE_PORT;
+    const normalizedNode = `${host}:${port}`;
+    this.setState({
+      connectednode: normalizedNode
+    });
     if (
       // eslint-disable-next-line eqeqeq
-      host.trim() == session.daemonHost &&
+      host == session.daemonHost &&
       // eslint-disable-next-line eqeqeq
-      port.trim() == session.daemonPort.toString()
+      port == session.daemonPort.toString()
     ) {
       return;
     }
     eventEmitter.emit('nodeChangeInProgress');
-    const daemon = new Daemon(host, Number(port));
-    await session.wallet.swapNode(daemon);
-    session.daemon = daemon;
-    eventEmitter.emit('newNodeConnected');
-    const daemonInfo = session.wallet.getDaemonConnectionInfo();
-    log.info(`Connected to ${daemonInfo.host}:${daemonInfo.port}`);
-    session.modifyConfig('daemonHost', daemonInfo.host);
-    session.modifyConfig('daemonPort', daemonInfo.port);
-  };
-
-  findNode = () => {
-    remote.shell.openExternal('https://interface.traaitt.com/nodes.html');
+    try {
+      const daemon = new Daemon(host, Number(port));
+      await session.wallet.swapNode(daemon);
+      session.daemon = daemon;
+      const daemonInfo = session.wallet.getDaemonConnectionInfo();
+      session.daemonHost = daemonInfo.host;
+      session.daemonPort = daemonInfo.port;
+      log.info(`Connected to ${daemonInfo.host}:${daemonInfo.port}`);
+      session.modifyConfig('daemonHost', daemonInfo.host);
+      session.modifyConfig('daemonPort', daemonInfo.port);
+      if (daemonInfo.sslDetermined) {
+        session.modifyConfig('daemonSSL', daemonInfo.ssl);
+      }
+      eventEmitter.emit('newNodeConnected');
+    } catch (error) {
+      log.error(`Failed to connect to ${normalizedNode}`);
+      log.error(error);
+      const daemonInfo = session.daemon.getConnectionInfo();
+      this.setState({
+        nodeChangeInProgress: false,
+        connectednode: `${session.daemonHost}:${session.daemonPort}`,
+        ssl: daemonInfo.sslDetermined === false ? undefined : daemonInfo.ssl
+      });
+    }
   };
 
   handleNodeInputChange = (event: any) => {
     this.setState({ connectednode: event.target.value.trim() });
   };
+
+  handleNodeSelectChange = (event: any) => {
+    if (!event.target.value) {
+      return;
+    }
+    this.setState({ connectednode: event.target.value });
+  };
+
+  getSelectedNodeValue(connectednode: string) {
+    return REMOTE_NODES.includes(connectednode) ? connectednode : '';
+  }
 
   handleNewNode = () => {
     const daemonInfo = session.wallet.getDaemonConnectionInfo();
@@ -126,7 +151,7 @@ export default class NodeChanger extends Component<Props, State> {
     this.setState({
       nodeChangeInProgress: false,
       connectednode: `${daemonInfo.host}:${daemonInfo.port}`,
-      ssl: daemonInfo.ssl
+      ssl: daemonInfo.sslDetermined === false ? undefined : daemonInfo.ssl
     });
   };
 
@@ -138,49 +163,41 @@ export default class NodeChanger extends Component<Props, State> {
   };
 
   handleNodeChangeComplete = () => {
+    const daemonInfo = session.daemon.getConnectionInfo();
     this.setState({
       nodeChangeInProgress: false,
       connectednode: `${session.daemonHost}:${session.daemonPort}`,
-      ssl: session.daemon.ssl
+      ssl: daemonInfo.sslDetermined === false ? undefined : daemonInfo.ssl
     });
-  };
-
-  toggleLocalDaemon = () => {
-    const { useLocalDaemon, daemonLogPath } = this.state;
-
-    if (!daemonLogPath) {
-      return;
-    }
-
-    if (!useLocalDaemon) {
-      startTail(daemonLogPath);
-    } else {
-      stopTail();
-    }
-
-    session.modifyConfig('useLocalDaemon', !useLocalDaemon);
-    this.setState({
-      useLocalDaemon: !useLocalDaemon
-    });
-
-    eventEmitter.emit('logLevelChanged');
   };
 
   render() {
     const { darkMode } = this.props;
-    const { textColor, linkColor } = uiType(darkMode);
-    const {
-      nodeChangeInProgress,
-      connectednode,
-      ssl,
-      useLocalDaemon,
-      daemonLogPath
-    } = this.state;
+    const { textColor } = uiType(darkMode);
+    const { nodeChangeInProgress, connectednode, ssl } = this.state;
     return (
       <form onSubmit={this.changeNode}>
         <p className={`has-text-weight-bold ${textColor}`}>
           Remote network (ip:port)
         </p>
+        <div className="field node-select-field">
+          <div className="control is-expanded">
+            <div className="select is-fullwidth">
+              <select
+                value={this.getSelectedNodeValue(connectednode)}
+                onChange={this.handleNodeSelectChange}
+                disabled={nodeChangeInProgress}
+              >
+                <option value="">Select a remote node...</option>
+                {REMOTE_NODES.map(node => (
+                  <option value={node} key={node}>
+                    {node}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
         <div className="field has-addons is-expanded">
           <div className="control is-expanded has-icons-left">
             {nodeChangeInProgress === false && (
@@ -214,22 +231,10 @@ export default class NodeChanger extends Component<Props, State> {
                 <i className="fas fa-sync fa-spin" />
               </span>
             )}
-            <p className="help">
-              <a
-                onClick={this.findNode}
-                onKeyPress={this.findNode}
-                role="button"
-                tabIndex={0}
-                className={linkColor}
-                onMouseDown={event => event.preventDefault()}
-              >
-                {il8n.find_node}
-              </a>
-            </p>
           </div>
           {nodeChangeInProgress === true && (
             <div className="control">
-              <button className="button is-success is-loading">
+              <button type="submit" className="button is-success is-loading">
                 <span className="icon is-small">
                   <i className="fa fa-network-wired" />
                 </span>
@@ -239,7 +244,7 @@ export default class NodeChanger extends Component<Props, State> {
           )}
           {nodeChangeInProgress === false && (
             <div className="control">
-              <button className="button is-success">
+              <button type="submit" className="button is-success">
                 <span className="icon is-small">
                   <i className="fa fa-network-wired" />
                 </span>
@@ -247,66 +252,6 @@ export default class NodeChanger extends Component<Props, State> {
               </button>
             </div>
           )}
-        </div>
-        {useLocalDaemon === false && (
-          <span className={textColor}>
-            <a
-              className="button is-danger"
-              onClick={this.toggleLocalDaemon}
-              onKeyPress={this.toggleLocalDaemon}
-              role="button"
-              tabIndex={0}
-              disabled={!daemonLogPath}
-            >
-              <span className="icon is-large">
-                <i className="fas fa-times" />
-              </span>
-            </a>
-            &nbsp;&nbsp; Tail Local Daemon Log File: <b>Off</b>
-          </span>
-        )}
-        {useLocalDaemon === true && (
-          <span className={textColor}>
-            <a
-              className="button is-success"
-              onClick={this.toggleLocalDaemon}
-              onKeyPress={this.toggleLocalDaemon}
-              role="button"
-              tabIndex={0}
-              disabled={!daemonLogPath}
-            >
-              <span className="icon is-large">
-                <i className="fa fa-check" />
-              </span>
-            </a>
-            &nbsp;&nbsp; Tail Local Daemon Log File: <b>On</b> &nbsp;&nbsp;
-          </span>
-        )}
-        <br />
-        <br />
-        <p className={`has-text-weight-bold ${textColor}`}>
-          XTEnetwork.log file location:
-        </p>
-        <div className="field has-addons">
-          <div className="control is-expanded">
-            <input
-              className="input"
-              type="text"
-              value={daemonLogPath}
-              readOnly
-            />
-          </div>
-          <div className="control">
-            <button
-              className="button is-warning"
-              onClick={this.browseForXTEnetwork}
-            >
-              <span className="icon is-small">
-                <i className="fas fa-folder-open" />
-              </span>
-              &nbsp;&nbsp;Browse
-            </button>
-          </div>
         </div>
       </form>
     );

@@ -12,18 +12,6 @@
     "keywords": ""
   },
   {
-    "settingName": "Tail Local Daemon Log File",
-    "location": "node",
-    "description": "Show the log output of your local XTEnetwork in the Terminal tab",
-    "keywords": ""
-  },
-  {
-    "settingName": "XTEnetwork Log File Location",
-    "location": "node",
-    "description": "Set the path to the XTEnetwork log",
-    "keywords": ""
-  },
-  {
     "settingName": "Wallet Settings",
     "location": "scan",
     "description": "All settings related to the wallet itself",
@@ -64,6 +52,12 @@
     "location": "display",
     "description": "Turn on or off dark mode",
     "keywords": "theme"
+  },
+  {
+    "settingName": "Rainbow Legacy",
+    "location": "display",
+    "description": "Turn on or off the animated rainbow legacy theme",
+    "keywords": "theme color"
   },
   {
     "settingName": "Security Settings",

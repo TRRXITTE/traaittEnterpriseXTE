@@ -25,6 +25,7 @@ import AutoUpdater from './wallet/autoUpdater';
 import LoginCounter from './wallet/loginCounter';
 import uiType from './utils/uitype';
 import DaemonLogger from './wallet/DaemonLogger';
+import { version as currentVersion } from '../package.json';
 
 const homedir = os.homedir();
 
@@ -54,6 +55,8 @@ export function savedInInstallDir(savePath: string) {
 }
 
 export let config = iConfig;
+const appearanceDefaultsVersion = '1.0.2';
+let userConfig = null;
 
 export const eventEmitter = new EventEmitter();
 eventEmitter.setMaxListeners(6);
@@ -79,10 +82,27 @@ if (!fs.existsSync(`${programDirectory}/config.json`)) {
 
   // add possible missing fields using internal config values
   try {
-    config = Object.assign(config, JSON.parse(rawUserConfig));
+    userConfig = JSON.parse(rawUserConfig);
+    config = Object.assign(config, userConfig);
   } catch {
     log.debug('User config is not valid JSON!');
   }
+}
+
+if (
+  currentVersion === appearanceDefaultsVersion &&
+  (!userConfig ||
+    userConfig.appearanceDefaultsVersion !== appearanceDefaultsVersion)
+) {
+  log.debug('Applying v1.0.2 appearance defaults.');
+  config.darkMode = true;
+  config.rainbowMode = true;
+  config.appearanceDefaultsVersion = appearanceDefaultsVersion;
+}
+
+if (config.darkMode !== true && config.rainbowMode === true) {
+  log.debug('Rainbow Legacy requires dark mode; disabling rainbow mode.');
+  config.rainbowMode = false;
 }
 
 export const addressList = JSON.parse(
@@ -127,10 +147,29 @@ let { textColor } = uiType(darkMode);
 
 eventEmitter.on('darkmodeon', () => {
   textColor = 'has-text-white';
+  if (config.rainbowMode === true) {
+    applyRainbowMode(true);
+  }
 });
 eventEmitter.on('darkmodeoff', () => {
   textColor = 'has-text-dark';
+  applyRainbowMode(false);
 });
+
+export function applyRainbowMode(status: boolean) {
+  if (document.body) {
+    document.body.classList.toggle(
+      'rainbow-mode',
+      status === true && config.darkMode === true
+    );
+  }
+}
+
+applyRainbowMode(config.rainbowMode === true && config.darkMode === true);
+eventEmitter.on('rainbowmodeon', () => {
+  applyRainbowMode(config.darkMode === true);
+});
+eventEmitter.on('rainbowmodeoff', () => applyRainbowMode(false));
 
 try {
   // eslint-disable-next-line no-unused-vars
@@ -186,7 +225,11 @@ ipcRenderer.on('handleClose', () => {
 
 let latestUpdate = '';
 
-eventEmitter.on('updateRequired', updateFile => {
+eventEmitter.on('updateRequired', updateInfo => {
+  const updateFile =
+    typeof updateInfo === 'string' ? updateInfo : updateInfo.downloadPath;
+  const latestVersion =
+    typeof updateInfo === 'string' ? '' : updateInfo.latestVersion;
   latestUpdate = updateFile;
   const message = (
     <div>
@@ -195,8 +238,9 @@ eventEmitter.on('updateRequired', updateFile => {
       </center>
       <br />
       <p className={`subtitle ${textColor}`}>
-        There&apos;s a new version of traaittEnterprise available. Would you like to
-        download it?
+        {latestVersion
+          ? `traaittEnterprise XTE ${latestVersion} is available. Would you like to download it?`
+          : `There's a new version of traaittEnterprise available. Would you like to download it?`}
       </p>
     </div>
   );
@@ -415,14 +459,36 @@ function handleOpen() {
   }
 }
 
-// Request notification permission on startup so notifications work immediately
-function requestNotificationPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission().then(permission => {
-      log.debug(`Notification permission: ${permission}`);
-    });
+export function supportsOsNotifications() {
+  const NativeNotification = remote.Notification;
+  if (!NativeNotification) {
+    return false;
   }
+  if (typeof NativeNotification.isSupported === 'function') {
+    return NativeNotification.isSupported();
+  }
+  return true;
 }
+
+// Request notification permission on startup so notifications work immediately.
+export function requestNotificationPermission() {
+  if (supportsOsNotifications()) {
+    log.debug('Native OS notifications supported.');
+    return Promise.resolve('granted');
+  }
+  if (!('Notification' in window)) {
+    log.debug('Notifications not supported in this environment.');
+    return Promise.resolve('unsupported');
+  }
+  if (window.Notification.permission !== 'default') {
+    return Promise.resolve(window.Notification.permission);
+  }
+  return window.Notification.requestPermission().then(permission => {
+    log.debug(`Notification permission: ${permission}`);
+    return permission;
+  });
+}
+
 requestNotificationPermission();
 
 eventEmitter.on('sendNotification', function sendNotification(amount) {
@@ -430,27 +496,54 @@ eventEmitter.on('sendNotification', function sendNotification(amount) {
 
   if (!notifications) return;
 
-  if (!('Notification' in window)) {
-    log.debug('Notifications not supported in this environment.');
-    return;
-  }
-
-  const sendIt = () => {
+  const title = 'Transaction Received!';
+  const sendWebNotification = () => {
     const notifOptions = {
       body: `${il8n.just_received} ${amount} ${il8n.XTE}`,
       icon: path.join(__dirname, 'images/icon.png')
     };
     // eslint-disable-next-line no-new
-    new window.Notification('Transaction Received!', notifOptions);
+    new window.Notification(title, notifOptions);
     log.debug(`Sent notification: You've just received ${amount} XTE.`);
   };
 
-  if (Notification.permission === 'granted') {
-    sendIt();
-  } else if (Notification.permission === 'default') {
-    Notification.requestPermission().then(permission => {
-      if (permission === 'granted') sendIt();
+  const sendOsNotification = () => {
+    if (!supportsOsNotifications()) {
+      return false;
+    }
+    try {
+      const notification = new remote.Notification({
+        title,
+        body: `${il8n.just_received} ${amount} ${il8n.XTE}`,
+        icon: path.join(__dirname, 'images/icon.png')
+      });
+      notification.show();
+      log.debug(`Sent OS notification: You've just received ${amount} XTE.`);
+      return true;
+    } catch (error) {
+      log.error('OS notification failed.');
+      log.error(error);
+      return false;
+    }
+  };
+
+  if (sendOsNotification()) {
+    return;
+  }
+
+  if (!('Notification' in window)) {
+    log.debug('Notifications not supported in this environment.');
+    return;
+  }
+
+  if (window.Notification.permission === 'granted') {
+    sendWebNotification();
+  } else if (window.Notification.permission === 'default') {
+    requestNotificationPermission().then(permission => {
+      if (permission === 'granted') sendWebNotification();
     });
+  } else {
+    log.debug('Notifications are blocked by the OS.');
   }
 });
 

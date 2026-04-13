@@ -2,7 +2,12 @@
 //
 // Please see the included LICENSE file for more information.
 import React, { Component } from 'react';
-import { session, config } from '../index';
+import {
+  session,
+  config,
+  requestNotificationPermission,
+  supportsOsNotifications
+} from '../index';
 import uiType from '../utils/uitype';
 
 type State = {
@@ -21,7 +26,9 @@ export default class NotificationsToggle extends Component<Props, State> {
       // Read live from config so it reflects current persisted value
       notifications: config.notifications !== undefined ? config.notifications : true,
       permissionBlocked:
-        'Notification' in window && Notification.permission === 'denied'
+        !supportsOsNotifications() &&
+        'Notification' in window &&
+        window.Notification.permission === 'denied'
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -34,13 +41,22 @@ export default class NotificationsToggle extends Component<Props, State> {
     const { notifications } = this.state;
     const enabling = !notifications;
 
+    if (enabling && supportsOsNotifications()) {
+      session.modifyConfig('notifications', true);
+      this.setState({
+        notifications: true,
+        permissionBlocked: false
+      });
+      return;
+    }
+
     if (enabling && 'Notification' in window) {
-      if (Notification.permission === 'denied') {
+      if (window.Notification.permission === 'denied') {
         this.setState({ permissionBlocked: true });
         return;
       }
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
+      if (window.Notification.permission === 'default') {
+        requestNotificationPermission().then(permission => {
           if (permission === 'granted') {
             session.modifyConfig('notifications', true);
             // Reflect the live persisted value

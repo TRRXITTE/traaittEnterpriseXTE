@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.0.2-rc2
+
+- Adds a persistent sync progress bar with wallet and node sync height display.
+- Adds bottom-bar node status display so node sync and wallet sync are visible separately.
+- Adds realtime sync tracking for wallet height, daemon height, and network height.
+- Updates the sync progress patch so the sync bar stays visible and reflects the current sync state.
+- Adds a fixed hardcoded node list with a node dropdown menu.
+- Makes dark mode the default theme.
+- Renames Rainbow Mode to Rainbow Legacy.
+- Adds enhanced Rainbow Legacy CSS with animated gradients across the app UI.
+- Fixes missing theme coverage for navigation, sync progress, tables, settings, buttons, tags, and scrollbars.
+- Reverts PNG icons to transparent assets and fixes the ICNS icon output.
+- Reverts the app and resource icon set to transparent icons.
+- Fixes macOS notarization for release builds.
+- Fixes the CI release script path.
+- Adds GitHub pull request color-code documentation and supported color JSON.
+- Updates the QR code renderer to use the standard QR code style.
+- Enables the debug terminal by default.
+- Adds Dogecoin fiat price fetching and refreshes the price when switching to fiat display.
+
 ## v1.1.1
 
 - fixes a bug where the "save as" command does not append the .wallet extension

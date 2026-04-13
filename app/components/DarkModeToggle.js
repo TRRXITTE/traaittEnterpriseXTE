@@ -21,9 +21,27 @@ export default class DarkModeToggle extends Component<Props, State> {
     this.darkModeOff = this.darkModeOff.bind(this);
   }
 
-  componentWillMount() {}
+  componentDidMount() {
+    eventEmitter.on('darkmodeon', this.syncDarkModeOn);
+    eventEmitter.on('darkmodeoff', this.syncDarkModeOff);
+  }
 
-  componentWillUnmount() {}
+  componentWillUnmount() {
+    eventEmitter.off('darkmodeon', this.syncDarkModeOn);
+    eventEmitter.off('darkmodeoff', this.syncDarkModeOff);
+  }
+
+  syncDarkModeOn = () => {
+    this.setState({
+      darkMode: true
+    });
+  };
+
+  syncDarkModeOff = () => {
+    this.setState({
+      darkMode: false
+    });
+  };
 
   darkModeOn = () => {
     this.setState({
@@ -35,12 +53,16 @@ export default class DarkModeToggle extends Component<Props, State> {
   };
 
   darkModeOff = () => {
+    const wasRainbowMode = session.rainbowMode === true;
     this.setState({
       darkMode: false
     });
     session.darkMode = false;
     session.toggleDarkMode(false);
     eventEmitter.emit('darkmodeoff');
+    if (wasRainbowMode) {
+      eventEmitter.emit('rainbowmodeoff');
+    }
   };
 
   render() {
