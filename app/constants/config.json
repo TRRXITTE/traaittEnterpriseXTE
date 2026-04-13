@@ -1,7 +1,7 @@
 {
   "walletFile": "",
   "enableAutoOptimization": true,
-  "scanCoinbaseTransactions": false,
+  "scanCoinbaseTransactions": true,
   "autoSelectDaemon": false,
   "minimizeToTray": false,
   "logLevel": "DISABLED",

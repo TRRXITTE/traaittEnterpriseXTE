@@ -40,17 +40,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build
-        run: yarn build
-
-      - name: Package macOS x86_64
-        run: yarn package-mac-x86_64
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-
+      # Import cert BEFORE packaging so electron-builder can sign the .app bundle
       - name: Import signing certificate
         if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
-        continue-on-error: true
         env:
           MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
           MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
@@ -64,20 +56,22 @@ jobs:
             -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
           security list-keychain -d user -s "$KC"
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KC"
+          # Export CSC_LINK/CSC_KEY_PASSWORD for electron-builder
+          echo "CSC_LINK=$RUNNER_TEMP/cert.p12" >> $GITHUB_ENV
+          echo "CSC_KEY_PASSWORD=$MACOS_CERT_PASSWORD" >> $GITHUB_ENV
 
-      - name: Sign DMG
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
-        continue-on-error: true
+      - name: Build
+        run: yarn build
+
+      - name: Package macOS x86_64
+        run: yarn package-mac-x86_64
         env:
-          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-        run: |
-          DMG=$(ls release/*.dmg 2>/dev/null | head -1 || true)
-          [[ -n "$DMG" ]] && codesign --force --options runtime --timestamp \
-            --sign "$SIGNING_IDENTITY" "$DMG" && codesign --verify --verbose "$DMG"
+          # CSC_LINK and CSC_KEY_PASSWORD are set by the import step for signed builds;
+          # for unsigned builds they are empty and electron-builder skips signing.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Notarize + Staple
         if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
-        continue-on-error: true
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}

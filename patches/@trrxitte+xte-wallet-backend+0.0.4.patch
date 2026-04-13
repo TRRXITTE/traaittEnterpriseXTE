@@ -1,0 +1,91 @@
+diff --git a/node_modules/@trrxitte/xte-wallet-backend/dist/lib/Config.js b/node_modules/@trrxitte/xte-wallet-backend/dist/lib/Config.js
+index f80b679..d46f393 100644
+--- a/node_modules/@trrxitte/xte-wallet-backend/dist/lib/Config.js
++++ b/node_modules/@trrxitte/xte-wallet-backend/dist/lib/Config.js
+@@ -47,7 +47,7 @@ class Config {
+          * high a value will cause the event loop to be blocked, and your interaction
+          * to be laggy.
+          */
+-        this.blocksPerTick = 1;
++        this.blocksPerTick = 10;
+         /**
+          * Your coins 'ticker', generally used to refer to the coin, i.e. 123 TR
+          */
+@@ -56,7 +56,7 @@ class Config {
+          * Most people haven't mined any blocks, so lets not waste time scanning
+          * them
+          */
+-        this.scanCoinbaseTransactions = false;
++        this.scanCoinbaseTransactions = true;
+         /**
+          * The minimum fee allowed for transactions, in ATOMIC units
+          */
+@@ -121,7 +121,7 @@ class Config {
+         /**
+          * The amount of memory to use storing downloaded blocks - 50MB
+          */
+-        this.blockStoreMemoryLimit = 1024 * 1024 * 50;
++        this.blockStoreMemoryLimit = 1024 * 1024 * 100;
+         /**
+          * The amount of blocks to take from the daemon per request. Cannot take
+          * more than 100.
+diff --git a/node_modules/@trrxitte/xte-wallet-backend/dist/lib/WalletSynchronizer.js b/node_modules/@trrxitte/xte-wallet-backend/dist/lib/WalletSynchronizer.js
+index 552bc0c..d4bd2a4 100644
+--- a/node_modules/@trrxitte/xte-wallet-backend/dist/lib/WalletSynchronizer.js
++++ b/node_modules/@trrxitte/xte-wallet-backend/dist/lib/WalletSynchronizer.js
+@@ -55,6 +55,11 @@ class WalletSynchronizer extends events_1.EventEmitter {
+          * Number of times we've failed to fetch blocks.
+          */
+         this.failCount = 0;
++        /**
++         * When storedBlocks falls at or below this count, trigger a pre-fetch
++         * so we don't stall waiting for the next batch.
++         */
++        this.prefetchThreshold = 80;
+         /**
+          * Last time we fetched blocks from the daemon. If this goes over the
+          * configured limit, we'll emit deadnode.
+@@ -266,6 +271,20 @@ class WalletSynchronizer extends events_1.EventEmitter {
+                     }
+                 }
+             }
++            else if (this.storedBlocks.length <= this.prefetchThreshold && this.shouldFetchMoreBlocks()) {
++                /* Buffer running low — kick off a background pre-fetch so we don't stall */
++                this.downloadBlocks().then(([check, downloadSuccess]) => {
++                    if (check) {
++                        if (!downloadSuccess) {
++                            this.failCount++;
++                        }
++                        else {
++                            this.lastDownloadedBlocks = new Date();
++                            this.failCount = 0;
++                        }
++                    }
++                });
++            }
+             return [_.take(this.storedBlocks, blockCount), this.failCount];
+         });
+     }
+@@ -279,8 +298,8 @@ class WalletSynchronizer extends events_1.EventEmitter {
+             this.storedBlocks = _.drop(this.storedBlocks);
+             this.synchronizationStatus.storeBlockHash(blockHeight, blockHash);
+         }
+-        /* sizeof() gets a tad expensive... */
+-        if (blockHeight % 10 === 0 && this.shouldFetchMoreBlocks()) {
++        /* Pre-fetch when buffer is running low */
++        if (this.storedBlocks.length <= this.prefetchThreshold && this.shouldFetchMoreBlocks()) {
+             /* Note - not awaiting here */
+             this.downloadBlocks().then(([check, downloadSuccess]) => {
+                 if (check) {
+@@ -320,6 +339,11 @@ class WalletSynchronizer extends events_1.EventEmitter {
+         if (this.failCount > 2) {
+             return false;
+         }
++        /* Fast path: if we have very few blocks, skip the expensive sizeof() */
++        if (this.storedBlocks.length <= 500) {
++            Logger_1.logger.log(`Stored blocks count: ${this.storedBlocks.length}, fetching more.`, Logger_1.LogLevel.DEBUG, Logger_1.LogCategory.SYNC);
++            return true;
++        }
+         const ramUsage = sizeof(this.storedBlocks);
+         if (ramUsage < this.config.blockStoreMemoryLimit) {
+             Logger_1.logger.log(`Approximate ram usage of stored blocks: ${Utilities_1.prettyPrintBytes(ramUsage)}, fetching more.`, Logger_1.LogLevel.DEBUG, Logger_1.LogCategory.SYNC);

@@ -65,11 +65,19 @@ export default class WalletSession {
     this.darkMode = config.darkMode || false;
     this.firstLoadOnLogin = true;
     this.wbConfig = {
-      scanCoinbaseTransactions: config.scanCoinbaseTransactions,
+      scanCoinbaseTransactions: config.scanCoinbaseTransactions !== false,
       customUserAgentString: `${name}-v${version}`,
       requestTimeout: 1000 * 30,
-      customRequestOptions: { pool: { maxSockets: 100 }, agent: false },
-      blocksPerTick: 1
+      /* Allow up to 256 concurrent sockets so pipelined sync requests
+         don't queue behind each other on the same keep-alive connection. */
+      customRequestOptions: { pool: { maxSockets: 256 }, agent: false },
+      /* Process 10 blocks per tick — balanced for UI responsiveness. */
+      blocksPerTick: 10,
+      /* Always request the maximum batch the daemon allows per round-trip. */
+      blocksPerDaemonRequest: 100,
+      /* 100 MB block store — large enough to buffer several full batches
+         so the pre-fetch logic never hits the memory cap mid-sync. */
+      blockStoreMemoryLimit: 1024 * 1024 * 100
     };
 
     this.selectedFiat = config.selectedFiat;

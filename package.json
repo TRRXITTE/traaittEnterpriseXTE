@@ -21,7 +21,7 @@
     "package-linux": "yarn build && electron-builder build --linux --x64 --publish never",
     "package-linux-arm64": "yarn build && electron-builder build --linux --arm64 --publish never",
     "package-win": "yarn build && electron-builder build --win --x64 --publish never",
-    "postinstall": "electron-builder install-app-deps && yarn build-dll",
+    "postinstall": "patch-package && electron-builder install-app-deps && yarn build-dll",
     "preinstall": "node ./internals/scripts/CheckYarn.js",
     "prestart": "yarn build",
     "prettier": "node ./node_modules/prettier/bin-prettier.js '**/*.{ts,tsx,json,md}' --ignore-path .gitignore --single-quote --write",
@@ -67,7 +67,12 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "icon": "app/app.icns",
-      "target": [{ "target": "dmg", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64"]
+        }
+      ]
     },
     "dmg": {
       "sign": false,
@@ -94,7 +99,12 @@
       "allowToChangeInstallationDirectory": true
     },
     "linux": {
-      "target": [{ "target": "AppImage", "arch": ["x64", "arm64"] }],
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        }
+      ],
       "category": "Finance",
       "icon": "resources/icons"
     },
@@ -217,13 +227,14 @@
     "jest": "^24.5.0",
     "lint-staged": "^8.1.5",
     "mini-css-extract-plugin": "^0.5.0",
-    "node-sass": "^4.11.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
+    "patch-package": "^8.0.1",
     "prettier": "^1.16.4",
     "react-test-renderer": "^16.8.6",
     "redux-logger": "^3.0.6",
     "rimraf": "^2.6.3",
-    "sass-loader": "^7.1.0",
+    "sass": "^1.58.0",
+    "sass-loader": "^10.4.1",
     "sinon": "^7.3.1",
     "source-map-support": "^0.5.11",
     "spectron": "^5.0.0",
@@ -250,6 +261,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.8.1",
+    "@trrxitte/xte-wallet-backend": "^0.0.4",
     "bulma": "^0.7.5",
     "bulma-extensions": "^6.2.7",
     "connected-react-router": "^6.3.2",
@@ -282,8 +294,7 @@
     "request-promise": "^4.2.4",
     "semver": "^6.2.0",
     "source-code-pro": "^2.30.2",
-    "tail": "^2.0.3",
-    "@trrxitte/xte-wallet-backend": "^0.0.4"
+    "tail": "^2.0.3"
   },
   "devEngines": {
     "node": ">=10.x",
