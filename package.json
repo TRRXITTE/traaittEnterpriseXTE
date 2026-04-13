@@ -1,7 +1,7 @@
 {
   "name": "traaittEnterpriseXTE",
   "productName": "traaittEnterprise XTE",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "traaittEnterprise XTE.",
   "scripts": {
     "build": "concurrently \"yarn build-main\" \"yarn build-renderer\"",
@@ -13,10 +13,14 @@
     "package": "yarn build && electron-builder build --publish never",
     "package-arm": "yarn build && electron-builder build --armv7l --publish never",
     "package-arm64": "yarn build && electron-builder build --arm64 --publish never",
-    "package-all": "yarn build && electron-builder build -mwl",
+    "package-mac-arm64": "yarn build && electron-builder build --mac --arm64 --publish never",
+    "package-mac-x86_64": "yarn build && electron-builder build --mac --x64 --publish never",
+    "package-mac-universal": "yarn build && electron-builder build --mac --universal --publish never",
+    "package-all": "yarn build && electron-builder build -mwl --x64 --arm64",
     "package-ci": "yarn postinstall && yarn build && electron-builder --publish always",
-    "package-linux": "yarn build && electron-builder build --linux",
-    "package-win": "yarn build && electron-builder build --win --x64",
+    "package-linux": "yarn build && electron-builder build --linux --x64 --publish never",
+    "package-linux-arm64": "yarn build && electron-builder build --linux --arm64 --publish never",
+    "package-win": "yarn build && electron-builder build --win --x64 --publish never",
     "postinstall": "electron-builder install-app-deps && yarn build-dll",
     "preinstall": "node ./internals/scripts/CheckYarn.js",
     "prestart": "yarn build",
@@ -47,7 +51,7 @@
   "main": "./app/main.prod.js",
   "build": {
     "productName": "traaittEnterprise XTE",
-    "appId": "wallet.traaitt",
+    "appId": "wallet.traaitt.xte",
     "files": [
       "app/dist/",
       "app/app.html",
@@ -56,7 +60,19 @@
       "app/images/",
       "package.json"
     ],
+    "mac": {
+      "category": "public.app-category.finance",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "icon": "app/app.icns",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x86_64"] }
+      ]
+    },
     "dmg": {
+      "sign": false,
       "contents": [
         {
           "x": 130,
@@ -71,7 +87,8 @@
       ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis"],
+      "icon": "app/images/icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -79,8 +96,11 @@
       "allowToChangeInstallationDirectory": true
     },
     "linux": {
-      "target": ["AppImage"],
-      "category": "Development"
+      "target": [
+        { "target": "AppImage", "arch": ["x64", "arm64"] }
+      ],
+      "category": "Finance",
+      "icon": "resources/icons"
     },
     "directories": {
       "buildResources": "resources",
@@ -88,8 +108,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "TRRXITTE Int., incorporate",
-      "repo": "traaittCASHInterface.macos",
+      "owner": "TRRXITTE",
+      "repo": "traaittEnterpriseXTE",
       "private": false
     }
   },

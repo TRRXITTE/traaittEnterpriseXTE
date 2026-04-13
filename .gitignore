@@ -1,3 +1,37 @@
 
+# Dependencies
 /node_modules
+app/node_modules
+
+# Build output
 /release
+/app/dist
+/dll
+
+# macOS
+.DS_Store
+**/.DS_Store
+._*
+
+# Logs
+*.log
+/app/logs
+
+# Environment / secrets
+.env
+.env.*
+*.p12
+*.cer
+*.mobileprovision
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Cache
+.cache
+/coverage
+*.tmp
+*.temp

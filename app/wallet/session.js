@@ -78,7 +78,8 @@ export default class WalletSession {
 
     this.getFiatPrice(this.selectedFiat);
 
-    this.daemon = new Daemon(this.daemonHost, this.daemonPort);
+    const useSSL = config.daemonSSL || this.daemonPort === 443;
+    this.daemon = new Daemon(this.daemonHost, this.daemonPort, useSSL);
 
     if (this.walletFile === '') {
       this.firstStartup = true;
@@ -143,10 +144,11 @@ export default class WalletSession {
         );
       });
       this.wallet.on('incomingtx', transaction => {
-        eventEmitter.emit(
-          'sendNotification',
-          this.atomicToHuman(transaction.totalAmount(), true)
-        );
+        const amount = this.atomicToHuman(transaction.totalAmount(), true);
+        log.debug(`Incoming transaction detected: ${amount} XTE (hash: ${transaction.hash})`);
+        eventEmitter.emit('sendNotification', amount);
+        // Force immediate UI refresh on incoming transaction
+        eventEmitter.emit('gotNodeFee');
       });
       this.wallet.on('deadnode', () => {
         eventEmitter.emit('deadNode');
@@ -358,9 +360,11 @@ export default class WalletSession {
         }
       );
       log.debug('Wrote config file to disk. Swapping daemon...');
+      const swapSSL = modifyConfig.daemonSSL || modifyConfig.daemonPort === 443;
       this.daemon = new Daemon(
         modifyConfig.daemonHost,
-        modifyConfig.daemonPort
+        modifyConfig.daemonPort,
+        swapSSL
       );
       await this.wallet.swapNode(this.daemon);
       eventEmitter.emit('nodeChangeComplete');
@@ -429,24 +433,42 @@ export default class WalletSession {
   }
 
   getFiatPrice = async (fiat: string) => {
-    const apiURL = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${fiat}&ids=traaitt&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=7d`;
+    const baseParams = `vs_currency=${fiat}&order=market_cap_desc&per_page=1&page=1&sparkline=false&price_change_percentage=7d`;
+    const xteURL = `https://api.coingecko.com/api/v3/coins/markets?${baseParams}&ids=traaitt`;
+    const dogeURL = `https://api.coingecko.com/api/v3/coins/markets?${baseParams}&ids=dogecoin`;
 
     const requestOptions = {
       method: 'GET',
-      uri: apiURL,
       headers: {},
       json: true,
       gzip: true
     };
+
+    // Try XTE price first; fall back to DOGE as a sample if XTE is not listed
     try {
-      const result = await request(requestOptions);
-      this.fiatPrice = result[0].current_price;
-      eventEmitter.emit('gotFiatPrice', result[0].current_price);
-      return result[0].current_price;
+      const xteResult = await request({ ...requestOptions, uri: xteURL });
+      if (xteResult && xteResult.length > 0 && xteResult[0].current_price != null) {
+        this.fiatPrice = xteResult[0].current_price;
+        eventEmitter.emit('gotFiatPrice', this.fiatPrice);
+        return this.fiatPrice;
+      }
     } catch (err) {
-      log.debug(`Request failed, CoinGecko API call error: \n`, err);
-      return undefined;
+      log.debug(`XTE CoinGecko request failed, trying DOGE fallback: \n`, err);
     }
+
+    try {
+      const dogeResult = await request({ ...requestOptions, uri: dogeURL });
+      if (dogeResult && dogeResult.length > 0 && dogeResult[0].current_price != null) {
+        this.fiatPrice = dogeResult[0].current_price;
+        log.debug(`Using DOGE sample price: ${this.fiatPrice}`);
+        eventEmitter.emit('gotFiatPrice', this.fiatPrice);
+        return this.fiatPrice;
+      }
+    } catch (err) {
+      log.debug(`DOGE CoinGecko fallback request failed: \n`, err);
+    }
+
+    return undefined;
   };
 
   getDaemonSyncStatus() {

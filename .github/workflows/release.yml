@@ -1,0 +1,399 @@
+name: Multi-Platform Release
+
+# Trigger: push a semver tag (e.g. 1.0.2) or run manually
+on:
+  push:
+    tags: ['[0-9]*.[0-9]*.[0-9]*']
+  workflow_dispatch:
+    inputs:
+      sign_macos:
+        description: 'Sign and notarize macOS builds'
+        type: boolean
+        default: false
+
+# ── Required GitHub Secrets ───────────────────────────────────────────────────
+# MACOS_CERT_BASE64      base64-encoded Developer ID .p12
+#                          (base64 -i cert.p12 | pbcopy)
+# MACOS_CERT_PASSWORD    password used when exporting the .p12
+# APPLE_SIGNING_IDENTITY "Developer ID Application: Christian Benz (MC52ZBYMUT)"
+# APPLE_ID               traaitt@gmail.com
+# APPLE_TEAM_ID          MC52ZBYMUT
+# APPLE_APP_PASSWORD     app-specific password for notarytool
+# GH_TOKEN               (automatically provided — used for release upload)
+# ─────────────────────────────────────────────────────────────────────────────
+
+env:
+  APP_NAME: "traaittEnterprise XTE"
+  NODE_VERSION: "18"
+
+jobs:
+
+  # ── macOS Apple Silicon (arm64) ─────────────────────────────────────────────
+  build-macos-arm64:
+    name: macOS arm64 (Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Process icons (add #191919 background)
+        run: |
+          if command -v convert &>/dev/null; then
+            bash scripts/add-icon-background.sh || echo "Icon processing skipped"
+          fi
+
+      - name: Build
+        run: yarn build
+
+      - name: Package macOS arm64
+        run: yarn package-mac-arm64
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Import signing certificate
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        continue-on-error: true
+        env:
+          MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p "" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "" "$KC"
+          echo "$MACOS_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KC" \
+            -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security list-keychain -d user -s "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KC"
+
+      - name: Sign DMG
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        continue-on-error: true
+        env:
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          DMG=$(ls release/*arm64*.dmg | head -1)
+          codesign --force --options runtime --timestamp \
+            --sign "$SIGNING_IDENTITY" "$DMG"
+          codesign --verify --verbose "$DMG"
+
+      - name: Notarize + Staple
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        continue-on-error: true
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          DMG=$(ls release/*arm64*.dmg | head -1)
+          xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait
+          xcrun stapler staple "$DMG"
+
+      - name: Generate checksum
+        run: |
+          cd release
+          sha256sum *.dmg 2>/dev/null >> SHA256SUMS.txt || shasum -a 256 *.dmg >> SHA256SUMS.txt || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: |
+            release/*.dmg
+            release/SHA256SUMS.txt
+
+  # ── macOS Intel (x86_64) ────────────────────────────────────────────────────
+  build-macos-x86_64:
+    name: macOS x86_64 (Intel)
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Process icons (add #191919 background)
+        run: |
+          if command -v convert &>/dev/null; then
+            bash scripts/add-icon-background.sh || echo "Icon processing skipped"
+          fi
+
+      - name: Build
+        run: yarn build
+
+      - name: Package macOS x86_64
+        run: yarn package-mac-x86_64
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Import signing certificate
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        continue-on-error: true
+        env:
+          MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p "" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "" "$KC"
+          echo "$MACOS_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KC" \
+            -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security list-keychain -d user -s "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KC"
+
+      - name: Sign DMG
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        continue-on-error: true
+        env:
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          DMG=$(ls release/*x64*.dmg release/*x86_64*.dmg 2>/dev/null | head -1)
+          codesign --force --options runtime --timestamp \
+            --sign "$SIGNING_IDENTITY" "$DMG"
+          codesign --verify --verbose "$DMG"
+
+      - name: Notarize + Staple
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.sign_macos == 'true'
+        continue-on-error: true
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          DMG=$(ls release/*x64*.dmg release/*x86_64*.dmg 2>/dev/null | head -1)
+          xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait
+          xcrun stapler staple "$DMG"
+
+      - name: Generate checksum
+        run: |
+          cd release
+          sha256sum *.dmg 2>/dev/null >> SHA256SUMS.txt || shasum -a 256 *.dmg >> SHA256SUMS.txt || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-x86_64
+          path: |
+            release/*.dmg
+            release/SHA256SUMS.txt
+
+  # ── Windows x86_64 ──────────────────────────────────────────────────────────
+  build-windows:
+    name: Windows x86_64
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Package Windows
+        run: yarn package-win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          Get-ChildItem release\*.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Out-File -Append release\SHA256SUMS.txt
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+
+  # ── Linux x86_64 ────────────────────────────────────────────────────────────
+  build-linux-x86_64:
+    name: Linux x86_64
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-0 libxss1 libnss3 libasound2 \
+            libgbm1 xvfb
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Package Linux x86_64
+        run: yarn package-linux
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Generate checksum
+        run: |
+          cd release
+          sha256sum *.AppImage >> SHA256SUMS.txt || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64
+          path: |
+            release/*.AppImage
+            release/SHA256SUMS.txt
+
+  # ── Linux ARM64 ─────────────────────────────────────────────────────────────
+  build-linux-arm64:
+    name: Linux ARM64
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-0 libxss1 libnss3 libasound2 \
+            libgbm1 xvfb
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Package Linux ARM64
+        run: yarn package-linux-arm64
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Generate checksum
+        run: |
+          cd release
+          sha256sum *.AppImage >> SHA256SUMS.txt || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: |
+            release/*.AppImage
+            release/SHA256SUMS.txt
+
+  # ── Publish GitHub Release ───────────────────────────────────────────────────
+  release:
+    name: Publish Release
+    needs:
+      - build-macos-arm64
+      - build-macos-x86_64
+      - build-windows
+      - build-linux-x86_64
+      - build-linux-arm64
+    runs-on: ubuntu-latest
+    if: always() && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Consolidate SHA256 checksums
+        run: |
+          cd artifacts
+          cat SHA256SUMS.txt 2>/dev/null | sort -u > SHA256SUMS_FINAL.txt || true
+          mv SHA256SUMS_FINAL.txt SHA256SUMS.txt || true
+
+      - name: Build release notes
+        run: |
+          VERSION="${{ github.ref_name }}"
+          CHECKSUMS=$(cat artifacts/SHA256SUMS.txt 2>/dev/null || echo "unavailable")
+          cat > release_body.md << RELEASE_EOF
+          ## traaittEnterprise XTE ${VERSION} — $(date -u '+%B %d, %Y')
+
+          Desktop wallet for the **traaitt [XTE]** network.
+          Node: \`main.trrxitte.com:443\` (SSL)
+
+          ---
+
+          ### Downloads
+
+          | Artifact | Platform |
+          |----------|----------|
+          | \`traaittEnterprise-XTE-*-arm64.dmg\` | macOS Apple Silicon |
+          | \`traaittEnterprise-XTE-*-x64.dmg\` | macOS Intel |
+          | \`traaittEnterprise-XTE-Setup-*.exe\` | Windows x86_64 |
+          | \`traaittEnterprise-XTE-*-x86_64.AppImage\` | Linux x86_64 |
+          | \`traaittEnterprise-XTE-*-arm64.AppImage\` | Linux ARM64 |
+
+          ---
+
+          ### SHA256 Checksums
+
+          \`\`\`
+          ${CHECKSUMS}
+          \`\`\`
+
+          ---
+
+          See [commits](https://github.com/TRRXITTE/traaittEnterpriseXTE/commits/${VERSION}) for full changelog.
+          RELEASE_EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: release_body.md
+          generate_release_notes: false
+          files: |
+            artifacts/*.dmg
+            artifacts/*.exe
+            artifacts/*.AppImage
+            artifacts/SHA256SUMS.txt

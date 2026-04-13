@@ -7,6 +7,7 @@ import isDev from 'electron-is-dev';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
+// path is used for notification icon resolution
 import React, { Fragment } from 'react';
 import LocalizedStrings from 'react-localization';
 import ErrorBoundary from 'react-error-boundary';
@@ -414,16 +415,42 @@ function handleOpen() {
   }
 }
 
+// Request notification permission on startup so notifications work immediately
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(permission => {
+      log.debug(`Notification permission: ${permission}`);
+    });
+  }
+}
+requestNotificationPermission();
+
 eventEmitter.on('sendNotification', function sendNotification(amount) {
   const { notifications } = config;
 
-  if (notifications) {
-    const notif = new window.Notification('Transaction Received!', {
-      body: `${il8n.just_received} ${amount} ${il8n.XTE}`
+  if (!notifications) return;
+
+  if (!('Notification' in window)) {
+    log.debug('Notifications not supported in this environment.');
+    return;
+  }
+
+  const sendIt = () => {
+    const notifOptions = {
+      body: `${il8n.just_received} ${amount} ${il8n.XTE}`,
+      icon: path.join(__dirname, 'images/icon.png')
+    };
+    // eslint-disable-next-line no-new
+    new window.Notification('Transaction Received!', notifOptions);
+    log.debug(`Sent notification: You've just received ${amount} XTE.`);
+  };
+
+  if (Notification.permission === 'granted') {
+    sendIt();
+  } else if (Notification.permission === 'default') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') sendIt();
     });
-    if (notif) {
-      log.debug(`Sent notification: You've just received ${amount} XTE.`);
-    }
   }
 });
 

@@ -62,6 +62,15 @@ if (fs.existsSync(`${programDirectory}/config.json`)) {
   }
 }
 
+const defaultAddressBook = [
+  {
+    name: 'TRRXITTE Int.',
+    address:
+      'XT2LD4w2FWZNcRCG4cYxfu8Bd1GjVziQ9Gv8MpK8NdXXg7uwJsbfXoYaGuJT2wqfMPapcjj4gmVasKvXLNnYxrDR1tVjhwwcP',
+    paymentID: ''
+  }
+];
+
 if (fs.existsSync(`${programDirectory}/addressBook.json`)) {
   const rawAddressBook = fs
     .readFileSync(`${programDirectory}/addressBook.json`)
@@ -69,17 +78,35 @@ if (fs.existsSync(`${programDirectory}/addressBook.json`)) {
 
   // check if the user addressBook is valid JSON before parsing it
   try {
-    JSON.parse(rawAddressBook);
+    const parsed = JSON.parse(rawAddressBook);
+    // Inject the TRRXITTE Int. sample address if not already present
+    const sampleAddress = defaultAddressBook[0].address;
+    const alreadyHasSample = parsed.some(
+      (entry: any) => entry.address === sampleAddress
+    );
+    if (!alreadyHasSample) {
+      parsed.unshift(defaultAddressBook[0]);
+      fs.writeFileSync(
+        `${programDirectory}/addressBook.json`,
+        JSON.stringify(parsed, null, 4)
+      );
+    }
   } catch {
-    // if it isn't, backup the invalid JSON and overwrite it with an empty addressBook
+    // if it isn't, backup the invalid JSON and overwrite it with the default addressBook
     fs.copyFileSync(
       `${programDirectory}/addressBook.json`,
       `${programDirectory}/addressBook.notvalid.json`
     );
-    fs.writeFileSync(`${programDirectory}/addressBook.json`, '[]');
+    fs.writeFileSync(
+      `${programDirectory}/addressBook.json`,
+      JSON.stringify(defaultAddressBook, null, 4)
+    );
   }
 } else {
-  fs.writeFileSync(`${programDirectory}/addressBook.json`, '[]');
+  fs.writeFileSync(
+    `${programDirectory}/addressBook.json`,
+    JSON.stringify(defaultAddressBook, null, 4)
+  );
 }
 
 const daemonLogFile = path.resolve(directories[1], 'XTEnetwork.log');

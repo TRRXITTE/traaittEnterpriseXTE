@@ -6,7 +6,8 @@ import { session, config } from '../index';
 import uiType from '../utils/uitype';
 
 type State = {
-  notifications: boolean
+  notifications: boolean,
+  permissionBlocked: boolean
 };
 
 type Props = {
@@ -17,7 +18,10 @@ export default class NotificationsToggle extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      notifications: config.notifications || false
+      // Read live from config so it reflects current persisted value
+      notifications: config.notifications !== undefined ? config.notifications : true,
+      permissionBlocked:
+        'Notification' in window && Notification.permission === 'denied'
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -28,19 +32,49 @@ export default class NotificationsToggle extends Component<Props, State> {
 
   toggle = () => {
     const { notifications } = this.state;
+    const enabling = !notifications;
 
-    session.modifyConfig('notifications', !notifications);
+    if (enabling && 'Notification' in window) {
+      if (Notification.permission === 'denied') {
+        this.setState({ permissionBlocked: true });
+        return;
+      }
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            session.modifyConfig('notifications', true);
+            // Reflect the live persisted value
+            this.setState({
+              notifications: true,
+              permissionBlocked: false
+            });
+          } else {
+            this.setState({ permissionBlocked: permission === 'denied' });
+          }
+        });
+        return;
+      }
+    }
+
+    session.modifyConfig('notifications', enabling);
+    // Sync state from config so the toggle always reflects persisted value
     this.setState({
-      notifications: !notifications
+      notifications: enabling,
+      permissionBlocked: false
     });
   };
 
   render() {
     const { darkMode } = this.props;
     const { textColor } = uiType(darkMode);
-    const { notifications } = this.state;
+    const { notifications, permissionBlocked } = this.state;
     return (
       <div>
+        {permissionBlocked && (
+          <p className="has-text-danger" style={{ marginBottom: '0.5rem' }}>
+            Notifications are blocked by the OS. Enable them in System Settings.
+          </p>
+        )}
         {notifications === false && (
           <span className={textColor}>
             <a

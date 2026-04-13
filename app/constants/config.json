@@ -2,11 +2,12 @@
   "walletFile": "",
   "enableAutoOptimization": true,
   "scanCoinbaseTransactions": false,
-  "autoSelectDaemon": true,
+  "autoSelectDaemon": false,
   "minimizeToTray": false,
   "logLevel": "DISABLED",
   "daemonHost": "main.trrxitte.com",
-  "daemonPort": 14485,
+  "daemonPort": 443,
+  "daemonSSL": true,
   "darkMode": false,
   "displayCurrency": "XTE",
   "selectedFiat": "usd",
@@ -15,6 +16,7 @@
   "fiatDecimals": 2,
   "autoLockInterval": 15,
   "autoLockEnabled": true,
+  "notifications": true,
   "useLocalDaemon": false,
   "daemonLogPath": ""
 }
