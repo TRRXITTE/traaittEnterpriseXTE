@@ -68,7 +68,7 @@ jobs:
             exit 1
           fi
 
-          printf '%s' "$MACOS_CERT_BASE64" | tr -d ' \t\n\r' | openssl base64 -d -out "$RUNNER_TEMP/cert.p12"
+          printf '%s' "$MACOS_CERT_BASE64" | tr -d ' \t\n\r' | openssl base64 -d -A -out "$RUNNER_TEMP/cert.p12"
           if [[ ! -s "$RUNNER_TEMP/cert.p12" ]]; then
             echo "::error::cert.p12 is empty after decode — secret may be corrupt or double-encoded"
             exit 1
