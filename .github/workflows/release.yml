@@ -61,7 +61,7 @@ jobs:
           security set-keychain-settings -lut 21600 "$KC"
           security unlock-keychain -p "$KC_PASS" "$KC"
 
-          echo "$MACOS_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          printf '%s' "$MACOS_CERT_BASE64" | tr -d ' \t\n\r' | base64 --decode > "$RUNNER_TEMP/cert.p12"
           if [[ ! -s "$RUNNER_TEMP/cert.p12" ]]; then
             echo "::error::cert.p12 is empty — check MACOS_CERT_BASE64 secret encoding"
             exit 1
