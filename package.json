@@ -245,7 +245,8 @@
     "yarn": "^1.17.3"
   },
   "resolutions": {
-    "enzyme/cheerio": "1.0.0-rc.3"
+    "enzyme/cheerio": "1.0.0-rc.3",
+    "testcafe/testcafe-legacy-api/testcafe-hammerhead": "24.7.2"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.8.1",
