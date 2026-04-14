@@ -92,18 +92,21 @@ jobs:
 
           identities="$(security find-identity -v -p codesigning "$KC" || true)"
           printf '%s\n' "$identities"
+          DETECTED_SIGNING_IDENTITY="$(awk -F '"' '/Developer ID Application/ { print $2; exit }' <<< "$identities")"
+          if [[ -z "$DETECTED_SIGNING_IDENTITY" ]]; then
+            echo "::error::No Developer ID Application identity found in the imported certificate."
+            exit 1
+          fi
+
           if [[ -n "$APPLE_SIGNING_IDENTITY" ]]; then
             if ! grep -Fq "$APPLE_SIGNING_IDENTITY" <<< "$identities"; then
-              echo "::error::APPLE_SIGNING_IDENTITY does not match any imported codesigning identity."
-              exit 1
+              echo "::warning::APPLE_SIGNING_IDENTITY does not match any imported codesigning identity. Using the imported Developer ID Application identity instead."
+              SIGNING_IDENTITY="$DETECTED_SIGNING_IDENTITY"
+            else
+              SIGNING_IDENTITY="$APPLE_SIGNING_IDENTITY"
             fi
-            SIGNING_IDENTITY="$APPLE_SIGNING_IDENTITY"
           else
-            SIGNING_IDENTITY="$(awk -F '"' '/Developer ID Application/ { print $2; exit }' <<< "$identities")"
-            if [[ -z "$SIGNING_IDENTITY" ]]; then
-              echo "::error::No Developer ID Application identity found in the imported certificate."
-              exit 1
-            fi
+            SIGNING_IDENTITY="$DETECTED_SIGNING_IDENTITY"
           fi
           echo "::notice::Using macOS signing identity: ${SIGNING_IDENTITY}"
 
