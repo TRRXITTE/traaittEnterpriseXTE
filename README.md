@@ -8,7 +8,7 @@
 
 #### traaittEnterpriseXTE: [official GitHub Download](https://GitHub.com/trrxitte/traaittEnterpriseXTE/releases)
 
-<img src="https://github.com/TRRXITTE/traaitt/blob/master/include/XTEenterprise.png">
+<img src="https://raw.githubusercontent.com/TRRXITTE/traaittEnterpriseXTE/main/resources/rainbow-legacy.png" alt="Rainbow Legacy theme preview">
 
 #### traaittEnterpriseXTE is a wallet for XTEnetwork.
 
