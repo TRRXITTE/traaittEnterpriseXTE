@@ -109,12 +109,14 @@ jobs:
             SIGNING_IDENTITY="$DETECTED_SIGNING_IDENTITY"
           fi
           echo "::notice::Using macOS signing identity: ${SIGNING_IDENTITY}"
+          CSC_NAME_VALUE="${SIGNING_IDENTITY#Developer ID Application: }"
+          echo "::notice::Using electron-builder CSC_NAME: ${CSC_NAME_VALUE}"
 
           # Export CSC_LINK/CSC_KEY_PASSWORD for electron-builder
           echo "CSC_LINK=$RUNNER_TEMP/cert.p12" >> "$GITHUB_ENV"
           echo "CSC_KEY_PASSWORD=$MACOS_CERT_PASSWORD" >> "$GITHUB_ENV"
           echo "CSC_IDENTITY_AUTO_DISCOVERY=true" >> "$GITHUB_ENV"
-          echo "CSC_NAME=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
+          echo "CSC_NAME=$CSC_NAME_VALUE" >> "$GITHUB_ENV"
 
       - name: Disable macOS signing
         if: env.MACOS_SIGNING_ENABLED != 'true'
